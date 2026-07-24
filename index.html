@@ -977,7 +977,7 @@
         ${yearFilterHtml}
       </div>
       <div class="mobile-stat-sel-wrap card">
-        <label class="mobile-stat-sel-label">Colonne affichée</label>
+        <label class="mobile-stat-sel-label">Stat affichée</label>
         <select id="mobileStatSel" class="control">${mobileStatOptions}</select>
       </div>
       <div class="card table-scroll-wrap" style="padding:0">
@@ -1014,7 +1014,14 @@
     if (mobileStatSel) {
       mobileStatSel.addEventListener('change', () => {
         currentMobileStat = +mobileStatSel.value;
-        applyMobileStat();
+        const col = COLS[currentMobileStat - 1];
+        if (col?.key) {
+          const ascFirst = ['bestRank', 'avgRank', 'avgPct', 'name'];
+          const dir = ascFirst.includes(col.key) ? 'asc' : 'desc';
+          renderRankingTable(currentRows, col.key, dir);
+        } else {
+          applyMobileStat();
+        }
       });
     }
     applyMobileStat();
