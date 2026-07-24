@@ -861,18 +861,17 @@
       { key: 'name',          label: 'Pilote',          sortable: true },
     ];
     cols.push(
-      { key: 'entries',       label: 'Eng.',            sortable: true },
-      { key: 'wins',          label: 'Vict.',           sortable: true },
-      { key: 'winRate',       label: '% Vict.',         sortable: true },
-      { key: 'podiums',       label: 'Pod.',            sortable: true },
-      { key: 'podiumRate',    label: '% Pod.',          sortable: true },
-      { key: 'bestRank',      label: 'Meil.',           sortable: true },
-      { key: 'avgRank',       label: 'Rang moy.',       sortable: true },
-
-      { key: 'avgPct',        label: 'Pct. moy.',       sortable: true },
-      { key: 'qualifRate',    label: '% Qualif.',       sortable: true },
-      { key: 'finaleRate',    label: '% Finale',        sortable: true },
-      { key: 'mancheTop4Rate',label: '% Mch.T4',        sortable: true },
+      { key: 'entries',       label: 'Eng.',            full: 'Engagements',        sortable: true },
+      { key: 'wins',          label: 'Vict.',           full: 'Victoires',           sortable: true },
+      { key: 'winRate',       label: '% Vict.',         full: '% Victoires',         sortable: true },
+      { key: 'podiums',       label: 'Pod.',            full: 'Podiums',             sortable: true },
+      { key: 'podiumRate',    label: '% Pod.',          full: '% Podiums',           sortable: true },
+      { key: 'bestRank',      label: 'Meil.',           full: 'Meilleur rang',       sortable: true },
+      { key: 'avgRank',       label: 'Rang moy.',       full: 'Rang moyen',          sortable: true },
+      { key: 'avgPct',        label: 'Pct. moy.',       full: 'Percentile moyen',    sortable: true },
+      { key: 'qualifRate',    label: '% Qualif.',       full: '% Qualifications',    sortable: true },
+      { key: 'finaleRate',    label: '% Finale',        full: '% Finales',           sortable: true },
+      { key: 'mancheTop4Rate',label: '% Mch.T4',        full: '% Manches Top 4',     sortable: true },
     );
     return cols;
   }
@@ -964,7 +963,7 @@
     const yearFilterHtml = isUCat() ? renderYearFilterBar() : '';
     const mobileStatOptions = COLS.slice(2).map((col, i) => {
       const idx = i + 3;
-      return `<option value="${idx}"${idx === currentMobileStat ? ' selected' : ''}>${col.label}</option>`;
+      return `<option value="${idx}"${idx === currentMobileStat ? ' selected' : ''}>${col.full || col.label}</option>`;
     }).join('');
     resultsEl.innerHTML = `
       <div class="card cat-stats-bar">
