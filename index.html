@@ -340,12 +340,20 @@
     .year-filter{flex-shrink:0}
 
     /* Table : scroll horizontal, colonne # sticky */
+    .table-scroll-wrap{position:relative}
+    .table-scroll-wrap::after{
+      content:''; pointer-events:none;
+      position:absolute; top:0; right:0; bottom:0; width:40px;
+      background:linear-gradient(to right, transparent, var(--card));
+      transition:opacity .2s; border-radius:0 12px 12px 0;
+    }
+    .table-scroll-wrap.scrolled-end::after{opacity:0}
     .table-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch}
     .ranking-table th{position:static}
     .ranking-table th,.ranking-table td{padding:5px 5px; white-space:nowrap}
     .ranking-table th:nth-child(2),.ranking-table td:nth-child(2){min-width:90px}
     .ranking-table th:nth-child(1){
-      position:sticky; left:0; z-index:3;
+      position:sticky; left:0; z-index:3; top:auto;
       background:var(--card-soft);
       box-shadow:2px 0 6px rgba(0,0,0,.10);
     }
@@ -959,7 +967,7 @@
         </div>
         ${yearFilterHtml}
       </div>
-      <div class="card" style="padding:0">
+      <div class="card table-scroll-wrap" style="padding:0">
         <div class="table-scroll">
           <table class="ranking-table">
             <thead><tr>${thHTML}</tr></thead>
@@ -978,6 +986,18 @@
         });
       }
     });
+
+    // Indicateur de scroll horizontal
+    const tableScrollEl = resultsEl.querySelector('.table-scroll');
+    const tableWrapEl   = resultsEl.querySelector('.table-scroll-wrap');
+    if (tableScrollEl && tableWrapEl) {
+      const updateScrollIndicator = () => {
+        const atEnd = tableScrollEl.scrollLeft + tableScrollEl.clientWidth >= tableScrollEl.scrollWidth - 4;
+        tableWrapEl.classList.toggle('scrolled-end', atEnd);
+      };
+      tableScrollEl.addEventListener('scroll', updateScrollIndicator, { passive: true });
+      updateScrollIndicator();
+    }
 
     // Pilot row click → detail modal
     const rowKeyMap = new Map(sorted.map(r => [r.key, r]));
