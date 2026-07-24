@@ -962,7 +962,6 @@
 
     document.body.classList.add('has-results');
     const yearFilterHtml = isUCat() ? renderYearFilterBar() : '';
-    const COLS = buildCols();
     const mobileStatOptions = COLS.slice(2).map((col, i) => {
       const idx = i + 3;
       return `<option value="${idx}"${idx === currentMobileStat ? ' selected' : ''}>${col.label}</option>`;
