@@ -252,6 +252,8 @@
   footer a:hover{text-decoration:underline}
   .footer-sep{color:var(--line-strong)}
 
+  .mobile-stat-sel-wrap{display:none}
+
   /* Pilot detail modal */
   .pilot-modal-overlay{
     position:fixed; inset:0; z-index:200;
@@ -338,6 +340,11 @@
     .pilot-search-wrap{flex:1 1 0; min-width:0}
     .pilot-search-input{width:auto; flex:1; min-width:0}
     .year-filter{flex-shrink:0}
+
+    /* Sélecteur de colonne mobile */
+    .mobile-stat-sel-wrap{display:flex; align-items:center; gap:10px; padding:10px 14px; margin-bottom:0}
+    .mobile-stat-sel-label{font-size:11px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; white-space:nowrap}
+    #mobileStatSel{flex:1; font-size:13px; padding:6px 10px}
 
     /* Table : scroll horizontal, colonne # sticky */
     .table-scroll-wrap{position:relative; overflow:hidden}
@@ -557,6 +564,7 @@
   let currentClassName = '';
   let currentYearFilter = 'all';
   let currentEventCount = 0;
+  let currentMobileStat = 4; // index 1-based, 4 = Victoires par défaut
 
   // --- Org selector ---
   function isDefaultOrg(accountName) {
@@ -954,6 +962,11 @@
 
     document.body.classList.add('has-results');
     const yearFilterHtml = isUCat() ? renderYearFilterBar() : '';
+    const COLS = buildCols();
+    const mobileStatOptions = COLS.slice(2).map((col, i) => {
+      const idx = i + 3;
+      return `<option value="${idx}"${idx === currentMobileStat ? ' selected' : ''}>${col.label}</option>`;
+    }).join('');
     resultsEl.innerHTML = `
       <div class="card cat-stats-bar">
         ${renderCategoryStats(rows)}
@@ -963,6 +976,10 @@
           <button class="pilot-search-clear" id="pilotSearchClear" title="Effacer">✕</button>
         </div>
         ${yearFilterHtml}
+      </div>
+      <div class="mobile-stat-sel-wrap card">
+        <label class="mobile-stat-sel-label">Colonne affichée</label>
+        <select id="mobileStatSel" class="control">${mobileStatOptions}</select>
       </div>
       <div class="card table-scroll-wrap" style="padding:0">
         <div class="table-scroll">
@@ -979,10 +996,29 @@
       if (statsBar) {
         const offset = statsBar.offsetHeight;
         resultsEl.querySelectorAll('.ranking-table th').forEach(th => {
-          th.style.top = offset + 'px';
+          th.style.top = window.innerWidth <= 640 ? '' : offset + 'px';
         });
       }
     });
+
+    // Sélecteur de colonne mobile
+    const applyMobileStat = () => {
+      if (window.innerWidth > 640) return;
+      const table = resultsEl.querySelector('.ranking-table');
+      if (!table) return;
+      table.querySelectorAll('th, td').forEach(cell => {
+        const idx = cell.cellIndex + 1;
+        if (idx >= 3) cell.style.display = idx === currentMobileStat ? '' : 'none';
+      });
+    };
+    const mobileStatSel = document.getElementById('mobileStatSel');
+    if (mobileStatSel) {
+      mobileStatSel.addEventListener('change', () => {
+        currentMobileStat = +mobileStatSel.value;
+        applyMobileStat();
+      });
+    }
+    applyMobileStat();
 
     // Indicateur de scroll horizontal
     const tableScrollEl = resultsEl.querySelector('.table-scroll');
