@@ -339,11 +339,27 @@
     .pilot-search-input{width:auto; flex:1; min-width:0}
     .year-filter{flex-shrink:0}
 
-    /* Table : masquer les colonnes secondaires (garde rang, nom, eng., vict., %vict.) */
-    .ranking-table th:nth-child(n+6),
-    .ranking-table td:nth-child(n+6){display:none}
+    /* Table : scroll horizontal, colonnes 1 et 2 sticky */
+    .table-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch}
+    .ranking-table th,.ranking-table td{padding:5px 5px; white-space:nowrap}
     .ranking-table th:nth-child(2),.ranking-table td:nth-child(2){min-width:90px}
-    .ranking-table th,.ranking-table td{padding:5px 5px}
+    .ranking-table th:nth-child(1),.ranking-table td:nth-child(1){
+      position:sticky; left:0; z-index:3; background:var(--card-soft);
+    }
+    .ranking-table th:nth-child(2){
+      position:sticky; left:44px; z-index:3; background:var(--card-soft);
+    }
+    .ranking-table td:nth-child(2){
+      position:sticky; left:44px; z-index:2; background:var(--card);
+    }
+    .ranking-table tbody tr:nth-child(even) td:nth-child(1),
+    .ranking-table tbody tr:nth-child(even) td:nth-child(2){
+      background:color-mix(in srgb, var(--card-soft) 85%, transparent);
+    }
+    .ranking-table tbody tr.pilot-row:hover td:nth-child(1),
+    .ranking-table tbody tr.pilot-row:hover td:nth-child(2){
+      background:var(--accent-soft) !important;
+    }
 
     /* Modal */
     .pilot-modal{max-height:92vh}
@@ -944,10 +960,12 @@
         ${yearFilterHtml}
       </div>
       <div class="card" style="padding:0">
-        <table class="ranking-table">
-          <thead><tr>${thHTML}</tr></thead>
-          <tbody>${rowsHTML}</tbody>
-        </table>
+        <div class="table-scroll">
+          <table class="ranking-table">
+            <thead><tr>${thHTML}</tr></thead>
+            <tbody>${rowsHTML}</tbody>
+          </table>
+        </div>
       </div>`;
 
     // Adjust sticky thead top to clear the sticky stats bar
