@@ -1037,12 +1037,26 @@
       updateScrollIndicator();
     }
 
-    // Pilot row click → detail modal
+    // Pilot row click → modal ou centrage si recherche active
     const rowKeyMap = new Map(sorted.map(r => [r.key, r]));
     resultsEl.querySelectorAll('.pilot-row').forEach(tr => {
       tr.addEventListener('click', e => {
-        const row = rowKeyMap.get(tr.dataset.key);
-        if (row) openPilotDetail(row);
+        const searchActive = document.getElementById('pilotSearchInput')?.value.trim().length > 0;
+        if (searchActive) {
+          // Effacer la recherche et scroller jusqu'à la ligne
+          const si = document.getElementById('pilotSearchInput');
+          si.value = '';
+          document.getElementById('pilotSearchClear')?.classList.remove('visible');
+          resultsEl.querySelectorAll('.ranking-table tbody tr').forEach(r => {
+            r.classList.remove('row-hidden', 'row-highlight');
+          });
+          tr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          tr.classList.add('row-highlight');
+          setTimeout(() => tr.classList.remove('row-highlight'), 2000);
+        } else {
+          const row = rowKeyMap.get(tr.dataset.key);
+          if (row) openPilotDetail(row);
+        }
       });
     });
 
