@@ -339,25 +339,24 @@
     .pilot-search-input{width:auto; flex:1; min-width:0}
     .year-filter{flex-shrink:0}
 
-    /* Table : scroll horizontal, colonnes 1 et 2 sticky */
+    /* Table : scroll horizontal, colonne # sticky */
     .table-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch}
     .ranking-table th,.ranking-table td{padding:5px 5px; white-space:nowrap}
     .ranking-table th:nth-child(2),.ranking-table td:nth-child(2){min-width:90px}
-    .ranking-table th:nth-child(1),.ranking-table td:nth-child(1){
-      position:sticky; left:0; z-index:3; background:var(--card-soft);
+    .ranking-table th:nth-child(1){
+      position:sticky; left:0; z-index:3;
+      background:var(--card-soft);
+      box-shadow:2px 0 6px rgba(0,0,0,.10);
     }
-    .ranking-table th:nth-child(2){
-      position:sticky; left:44px; z-index:3; background:var(--card-soft);
+    .ranking-table td:nth-child(1){
+      position:sticky; left:0; z-index:2;
+      background:var(--card);
+      box-shadow:2px 0 6px rgba(0,0,0,.10);
     }
-    .ranking-table td:nth-child(2){
-      position:sticky; left:44px; z-index:2; background:var(--card);
+    .ranking-table tbody tr:nth-child(even) td:nth-child(1){
+      background:color-mix(in srgb, var(--card-soft) 85%, var(--card));
     }
-    .ranking-table tbody tr:nth-child(even) td:nth-child(1),
-    .ranking-table tbody tr:nth-child(even) td:nth-child(2){
-      background:color-mix(in srgb, var(--card-soft) 85%, transparent);
-    }
-    .ranking-table tbody tr.pilot-row:hover td:nth-child(1),
-    .ranking-table tbody tr.pilot-row:hover td:nth-child(2){
+    .ranking-table tbody tr.pilot-row:hover td:nth-child(1){
       background:var(--accent-soft) !important;
     }
 
@@ -514,7 +513,7 @@
 
   async function loadIndex() {
     statusEl.classList.add('loading');
-    setStatus('Chargement de l\'index…');
+    setStatus('Chargement des données…');
     rankCatSel.innerHTML = '<option value="" disabled selected>Chargement…</option>';
     rankCatSel.disabled = true;
     rankBtn.disabled = true;
