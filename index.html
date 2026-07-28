@@ -642,6 +642,8 @@
     return idx;
   }
 
+  const retryBtn = document.getElementById('retryBtn');
+
   async function loadIndex() {
     retryBtn.hidden = true;
     statusEl.classList.add('loading');
@@ -713,7 +715,6 @@
 
   // --- DOM refs ---
   const statusEl = document.getElementById('status');
-  const retryBtn = document.getElementById('retryBtn');
   const resultsEl = document.getElementById('results');
   const rankYearSel = document.getElementById('rankYearSel');
   const rankCatSel = document.getElementById('rankCatSel');
