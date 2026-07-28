@@ -487,18 +487,122 @@
     .trim()
     .replace(/\s+/g, ' ');
 
-  // Normalisation catégorie : idem norm + singularise les mots (garcons→garcon, filles→fille…)
-  const normCat = s => {
-    const words = norm(s).split(' ');
-    return words
-      .map(w => w.length > 2 && w.endsWith('s') ? w.slice(0, -1) : w)
-      .filter(w => w !== 'an')
-      .join(' ');
-  };
-
   const escape = s => String(s ?? '').replace(/[&<>"']/g, c =>
     ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])
   );
+
+  // Groupes : plusieurs perpetualClassCodes → une seule entrée dans le dropdown.
+  // Utilisés pour U7–U13 où des codes d'âge (G12, 11FR…) et variantes régionales/novices
+  // correspondent à la même catégorie nationale.
+  const CLASS_GROUPS = [
+    // U7
+    { key:'g:U7G',  label:'U7 Garçon',  codes:new Set(['U7GR','7GR','U7']) },
+    { key:'g:U7F',  label:'U7 Fille',   codes:new Set(['U7FR','7FR','U7.C']) },
+    // U9
+    { key:'g:U9G',  label:'U9 Garçon',  codes:new Set(['U9GR','9GR','8GR','U9G','U9GNR','U9']) },
+    { key:'g:U9F',  label:'U9 Fille',   codes:new Set(['U9FR','9FR','8FR','U9F','U9.C']) },
+    // U11
+    { key:'g:U11G', label:'U11 Garçon', codes:new Set(['U11GR','11GR','10GR','U11G','U11GNR','U11']) },
+    { key:'g:U11F', label:'U11 Fille',  codes:new Set(['U11FR','11FR','10FR','U11F','U11.C']) },
+    // U13
+    { key:'g:U13G', label:'U13 Garçon', codes:new Set(['U13GR','U13G','U13GNR','U13','G12','G13','12GR','13GR']) },
+    { key:'g:U13F', label:'U13 Fille',  codes:new Set(['U13FR','U13F','U13FNR','U13.C','F12','F13','12FR','13FR','F13N']) },
+    // U15
+    { key:'g:U15G', label:'U15 Garçon', codes:new Set(['U15GR','U15G','U15GNR','U15','G14','G14N','G14C','G15','G15N','G15C','14GR']) },
+    { key:'g:U15F', label:'U15 Fille',  codes:new Set(['U15FR','U15F','U15FNR','U15.C','F14','F14N','F15','F15N','F15C','14FR']) },
+    // U17
+    { key:'g:U17G', label:'U17 Garçon',      codes:new Set(['U17GR','U17G','U17GNR']) },
+    { key:'g:U17F', label:'U17 Fille',        codes:new Set(['U17FR','U17F']) },
+    // Junior
+    { key:'g:JH',   label:'Junior Homme',     codes:new Set(['JH','JHR']) },
+    { key:'g:JF',   label:'Junior Fille',     codes:new Set(['JF','JFR']) },
+  ];
+  const CODE_TO_GROUP = new Map();
+  for (const g of CLASS_GROUPS) for (const c of g.codes) CODE_TO_GROUP.set(c, g);
+
+  // Labels pour les codes non regroupés (U15+, adultes, cruiser…)
+  const CLASS_NAMES = {
+    // Codes d'âge anciens non couverts par les groupes
+    F8:'Fille 8', F9:'Fille 9', F10:'Fille 10', F11:'Fille 11',
+    G8:'Garçon 8', G9:'Garçon 9', G10:'Garçon 10', G11:'Garçon 11',
+    F16:'Fille 16', F16N:'Fille 16 Nationale', F16C:'Fille 16 Championnat',
+    // U17
+    U17GR:'U17 Garçon', U17FR:'U17 Fille', U17:'U17', U17G:'U17 Garçon', U17F:'U17 Fille',
+    U17GNR:'U17 Garçon Novice',
+    G16:'Garçon 16', G16N:'Garçon 16 National', G16C:'Garçon 16 Championnat',
+    U17GCHL:'U17 Garçon Challenge', U17FCHL:'U17 Fille Challenge',
+    U17GRCHP:'U17 Garçon Championnat', U17FRCHP:'U17 Fille Championnat',
+    // U19
+    JH:'Junior Homme', JF:'Junior Fille',
+    JHR:'Junior Homme Régional', JFR:'Junior Fille Régionale',
+    U19H:'U19 Homme', U19F:'U19 Fille',
+    U19HR:'U19 Homme Régional', U19FR:'U19 Fille Régionale',
+    // U23
+    U23H:'U23 Homme', U23F:'U23 Femme',
+    U23HR:'U23 Homme Régional', U23FR:'U23 Femme Régionale',
+    // Elite
+    EH:'Élite Homme', EF:'Élite Femme',
+    EHR:'Élite Régionale Homme', EFR:'Élite Régionale Femme',
+    // Seniors
+    H1724:'Homme 17/24', H1724N:'Homme 17/24 National', H1724R:'Homme 17/24 Régional',
+    H1729:'Homme 17/29', H1729R:'Homme 17/29 Régional',
+    H17:'Homme 17+', 'H17+':'Homme 17+',
+    H2529:'Homme 25/29', H2529N:'Homme 25/29 National', H2529R:'Homme 25/29 Régional',
+    H3034:'Homme 30/34', H3039:'Homme 30/39',
+    'H30+':'Homme 30+', 'H30+N':'Homme 30+ National', 'H30+R':'Homme 30+ Régional',
+    'H35+':'Homme 35+', 'H40+':'Homme 40+',
+    F1724:'Femme 17/24', F1724N:'Femme 17/24 Nationale', F1724R:'Femme 17/24 Régionale',
+    'F17+':'Femme 17+', 'F17+N':'Femme 17+ Nationale', 'F17+R':'Femme 17+ Régionale',
+    'F15+R':'Femme 15+ Régionale',
+    'F25+':'Femme 25+', 'F25+N':'Femme 25+ Nationale', 'F25+R':'Femme 25+ Régionale',
+    // Divers seniors
+    'C30+':'30 ans et + Hommes', C1729:'17/29 ans Hommes', C1724:'17/24 ans', 'C15+F':'15 ans et + Femmes',
+    'MA30+':'Masters 30+',
+    // Supercross
+    SGR:'Supercross Garçon', SFR:'Supercross Fille', SG:'Supercross Garçon', SF:'Supercross Fille',
+    // Time Trial
+    TT15:'Time Trial U15+',
+    // Cruiser Homme
+    CRH1724:'Cruiser Homme 17/24', CRH1724N:'Cruiser Homme 17/24 National', CRH1724R:'Cruiser Homme 17/24 Régional',
+    CRH1729:'Cruiser Homme 17/29',
+    CRH2529:'Cruiser Homme 25/29', CRH2529N:'Cruiser Homme 25/29 National', CRH2529R:'Cruiser Homme 25/29 Régional',
+    CRH3034:'Cruiser Homme 30/34', CRH3039:'Cruiser Homme 30/39', CRH3039N:'Cruiser Homme 30/39 National', CRH3039R:'Cruiser Homme 30/39 Régional',
+    CRH3539:'Cruiser Homme 35/39', CRH3539R:'Cruiser Homme 35/39 Régional',
+    CRH4044:'Cruiser Homme 40/44', CRH4044N:'Cruiser Homme 40/44 National', CRH4044R:'Cruiser Homme 40/44 Régional', CRH4044Rxx:'Cruiser Homme 40/44 Régional',
+    CRH4049:'Cruiser Homme 40/49', CRH4549:'Cruiser Homme 45/49',
+    'CRH40+':'Cruiser Homme 40+', 'CRH40+R':'Cruiser Homme 40+ Régional',
+    'CRH45+':'Cruiser Homme 45+', 'CRH45+N':'Cruiser Homme 45+ National', 'CRH45+R':'Cruiser Homme 45+ Régional',
+    'CRH50+':'Cruiser Homme 50+',
+    'CR30+R':'Cruiser 30+ Régional', 'CR30+R.C':'Cruiser 30+ Régional Fille',
+    CR1329R:'Cruiser 13/29 Régional', 'CR1329R.C':'Cruiser 13/29 Régional Fille',
+    CR1724:'Cruiser 17/24', CR1724N:'Cruiser 17/24 National',
+    CR2529:'Cruiser 25/29', CR2529N:'Cruiser 25/29 National',
+    CR3034:'Cruiser 30/34', CR3039:'Cruiser 30/39', CR3039N:'Cruiser 30/39 National',
+    CR3539:'Cruiser 35/39', CR4044:'Cruiser 40/44', CR4044N:'Cruiser 40/44 National',
+    'CR45+':'Cruiser 45+',
+    // Cruiser Femme
+    CRF1729:'Cruiser Femme 17/29', CRF1729N:'Cruiser Femme 17/29 Nationale', CRF1729R:'Cruiser Femme 17/29 Régionale',
+    CRF1924:'Cruiser Femme 19/24', CRF2529:'Cruiser Femme 25/29',
+    'CRF17+':'Cruiser Femme 17+', 'CRF17+R':'Cruiser Femme 17+ Régionale',
+    'CRF30+':'Cruiser Femme 30+', 'CRF30+N':'Cruiser Femme 30+ Nationale', 'CRF30+R':'Cruiser Femme 30+ Régionale',
+    CRF3039:'Cruiser Femme 30/39', 'CRF40+':'Cruiser Femme 40+',
+    // Cruiser U15
+    CRU15G:'Cruiser U15 Garçon', CRU15GN:'Cruiser U15 Garçon National', CRU15GR:'Cruiser U15 Garçon Régional',
+    CRU15F:'Cruiser U15 Fille', CRU15FN:'Cruiser U15 Fille Nationale', CRU15FR:'Cruiser U15 Fille Régionale',
+    // Cruiser U17
+    CRU17G:'Cruiser U17 Garçon', CRU17GN:'Cruiser U17 Garçon National', CRU17GR:'Cruiser U17 Garçon Régional',
+    CRU17F:'Cruiser U17 Fille', CRU17FN:'Cruiser U17 Fille Nationale', CRU17FR:'Cruiser U17 Fille Régionale',
+    // Cruiser U19
+    CRU19HR:'Cruiser U19 Homme Régional', CRU19F:'Cruiser U19 Fille',
+  };
+
+  function classLabel(key) {
+    if (key.startsWith('g:')) {
+      const g = CLASS_GROUPS.find(x => x.key === key);
+      return g ? g.label : key;
+    }
+    return CLASS_NAMES[key] || key;
+  }
 
   // --- State ---
   let pilotsIndex = null;
@@ -535,8 +639,19 @@
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       pilotsIndex = expandIndex(await res.json());
       accounts = (pilotsIndex.orgs || []).slice().sort((a, b) => a.accountName.localeCompare(b.accountName, 'fr'));
+      // Sélection par défaut : orgs "officielles"
       for (const a of accounts) {
         if (isDefaultOrg(a.accountName)) selectedCodes.add(a.accountCode);
+      }
+      // Override depuis l'URL si présent
+      const urlState = parseUrlState();
+      if (urlState.orgs !== null) {
+        selectedCodes.clear();
+        urlState.orgs.forEach(code => selectedCodes.add(code));
+      }
+      if (urlState.year) {
+        const sel = document.getElementById('rankYearSel');
+        if (sel) sel.value = urlState.year;
       }
       renderOrgSelectorList();
       updateOrgSelectorUI();
@@ -544,10 +659,38 @@
       updateRankingForm();
       statusEl.classList.remove('loading');
       setStatus('');
+      if (urlState.orgs !== null || urlState.year) {
+        searchRanking();
+      }
     } catch(e) {
       statusEl.classList.remove('loading');
       setStatus('Impossible de charger l\'index : ' + humanError(e), true);
     }
+  }
+
+  // --- URL state ---
+  function parseUrlState() {
+    const p = new URLSearchParams(location.search);
+    const orgsRaw = p.get('orgs');
+    return {
+      orgs: orgsRaw ? orgsRaw.split(',').filter(Boolean) : null,
+      year: p.get('year') || ''
+    };
+  }
+  function buildUrl() {
+    const u = new URL(location.href);
+    if (accounts.length > 0 && selectedCodes.size < accounts.length) {
+      u.searchParams.set('orgs', [...selectedCodes].join(','));
+    } else {
+      u.searchParams.delete('orgs');
+    }
+    const year = document.getElementById('rankYearSel')?.value || '';
+    if (year) u.searchParams.set('year', year);
+    else u.searchParams.delete('year');
+    return u.pathname + (u.search || '');
+  }
+  function replaceUrlState() {
+    history.replaceState(null, '', buildUrl());
   }
 
   // --- DOM refs ---
@@ -595,6 +738,7 @@
         if (cb.checked) selectedCodes.add(cb.value);
         else selectedCodes.delete(cb.value);
         updateOrgSelectorUI();
+        replaceUrlState();
         // Reload data for new org selection
         onOrgSelectionChanged();
       });
@@ -637,20 +781,23 @@
   function updateRankingForm() {
     if (!pilotsIndex) return;
     const year = rankYearSel.value;
-    const classMap = new Map();
+    // Clés présentes dans les données : group key (g:…) ou perpetualClassCode brut
+    const keySet = new Set();
     for (const { account, event, classes } of (pilotsIndex.events || [])) {
       if (!selectedCodes.has(account.accountCode)) continue;
       if (year && !(event.eventDate || '').startsWith(year + '-')) continue;
       for (const cls of (classes || [])) {
-        if (!cls.className) continue;
-        const key = normCat(cls.className);
-        if (!classMap.has(key)) classMap.set(key, cls.className);
+        const code = cls.perpetualClassCode;
+        if (!code) continue;
+        const grp = CODE_TO_GROUP.get(code);
+        keySet.add(grp ? grp.key : code);
       }
     }
-    // Tri alphabétique sur la clé normalisée
-    const sorted = [...classMap.entries()].sort((a, b) => a[0].localeCompare(b[0], 'fr'));
+    const sorted = [...keySet].sort((a, b) =>
+      classLabel(a).localeCompare(classLabel(b), 'fr', { sensitivity: 'base' })
+    );
 
-    const prevKey = normCat(rankCatSel.value);
+    const prevKey = rankCatSel.value;
     rankCatSel.innerHTML = '';
     rankCatSel.disabled = false;
     if (sorted.length === 0) {
@@ -663,10 +810,10 @@
       placeholder.textContent = 'Choisir une catégorie…';
       rankCatSel.appendChild(placeholder);
       let restored = false;
-      for (const [key, cn] of sorted) {
+      for (const key of sorted) {
         const opt = document.createElement('option');
-        opt.value = cn;
-        opt.textContent = cn.trim();
+        opt.value = key;
+        opt.textContent = classLabel(key);
         if (prevKey && key === prevKey) { opt.selected = true; restored = true; }
         rankCatSel.appendChild(opt);
       }
@@ -681,6 +828,7 @@
 
   rankCatSel.addEventListener('change', updateRankBtnEnabled);
   rankYearSel.addEventListener('change', () => {
+    replaceUrlState();
     updateRankingForm();
     if (currentRows.length > 0) searchRanking();
   });
@@ -688,7 +836,8 @@
   // --- Stats computation (from test_sqorz) ---
   function isFinalPhase(d) {
     const n = (d.phaseName || '').toLowerCase();
-    return /final/.test(n) && !/semi|quarter|1\/|eighth|repech/.test(n);
+    if (/semi|quarter|quart|demi|\d+[eè]me|\d+\/|1\/|eighth|repech/.test(n)) return false;
+    return /\bfinale?\b/.test(n);
   }
   function isMotoPhase(d) {
     return /^moto/i.test(d.phaseName || '');
@@ -758,28 +907,37 @@
   // --- Main search ---
   function searchRanking() {
     const year = rankYearSel.value;
-    const className = rankCatSel.value;
-    if (!className) { setStatus('Choisir une catégorie.', true); return; }
-    currentClassName = className;
+    const selectedKey = rankCatSel.value;
+    if (!selectedKey) { setStatus('Choisir une catégorie.', true); return; }
+    currentClassName = classLabel(selectedKey);
     currentYearFilter = 'all';
 
-    const pilotMap = new Map(); // normKey → {firstName, lastName, matches[]}
+    // Résoudre le groupe ou le code individuel
+    const grp = CLASS_GROUPS.find(g => g.key === selectedKey);
+    const matchCode = grp
+      ? (code => grp.codes.has(code))
+      : (code => code === selectedKey);
+
+    const pilotMap = new Map(); // normKey → {firstName, lastName, seenEvents: Set, matches[]}
     const eventIds = new Set();
 
     for (const { account, event, classes } of (pilotsIndex.events || [])) {
       if (!selectedCodes.has(account.accountCode)) continue;
       if (year && !(event.eventDate || '').startsWith(year + '-')) continue;
       for (const cls of (classes || [])) {
-        if (normCat(cls.className) !== normCat(className)) continue;
+        if (!matchCode(cls.perpetualClassCode)) continue;
         eventIds.add(event.eventId);
         const competitors = cls.competitors || [];
         for (const c of competitors) {
           const key = norm((c.firstName || '') + ' ' + (c.lastName || ''));
           if (!key) continue;
           if (!pilotMap.has(key)) {
-            pilotMap.set(key, { firstName: c.firstName || '', lastName: c.lastName || '', matches: [] });
+            pilotMap.set(key, { firstName: c.firstName || '', lastName: c.lastName || '', seenEvents: new Set(), matches: [] });
           }
-          pilotMap.get(key).matches.push({
+          const pilot = pilotMap.get(key);
+          if (pilot.seenEvents.has(event.eventId)) continue;
+          pilot.seenEvents.add(event.eventId);
+          pilot.matches.push({
             account, event,
             cls: { className: cls.className },
             competitor: c,
@@ -791,10 +949,11 @@
 
     currentEventCount = eventIds.size;
 
+    const label = classLabel(selectedKey);
     if (pilotMap.size === 0) {
       const yearMsg = year ? ` en ${year}` : '';
-      setStatus(`Aucun pilote trouvé dans la catégorie « ${className} »${yearMsg}.`);
-      resultsEl.innerHTML = `<div class="card"><div class="empty-state">Aucun résultat pour « ${escape(className)} »${year ? ` en ${year}` : ''}.</div></div>`;
+      setStatus(`Aucun pilote trouvé dans la catégorie « ${label} »${yearMsg}.`);
+      resultsEl.innerHTML = `<div class="card"><div class="empty-state">Aucun résultat pour « ${escape(label)} »${year ? ` en ${year}` : ''}.</div></div>`;
       currentRows = [];
       return;
     }
@@ -813,7 +972,7 @@
     }
 
     const yearMsg = year ? ` (${year})` : '';
-    setStatus(`${rows.length} pilote(s) trouvé(s) dans « ${className} »${yearMsg}.`);
+    setStatus(`${rows.length} pilote(s) trouvé(s) dans « ${label} »${yearMsg}.`);
 
     currentSortCol = 'wins';
     currentSortDir = 'desc';
