@@ -647,7 +647,8 @@
       const urlState = parseUrlState();
       if (urlState.orgs !== null) {
         selectedCodes.clear();
-        urlState.orgs.forEach(code => selectedCodes.add(code));
+        const knownCodes = new Set(accounts.map(a => a.accountCode));
+        urlState.orgs.filter(c => knownCodes.has(c)).forEach(code => selectedCodes.add(code));
       }
       if (urlState.year) {
         const sel = document.getElementById('rankYearSel');
@@ -763,11 +764,13 @@
   document.getElementById('orgSelectAll').addEventListener('click', () => {
     accounts.forEach(a => selectedCodes.add(a.accountCode));
     updateOrgSelectorUI();
+    replaceUrlState();
     onOrgSelectionChanged();
   });
   document.getElementById('orgDeselectAll').addEventListener('click', () => {
     selectedCodes.clear();
     updateOrgSelectorUI();
+    replaceUrlState();
     onOrgSelectionChanged();
   });
 
