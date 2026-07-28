@@ -89,6 +89,8 @@
   .theme-btn:active{transform:scale(.95)}
   .hub-back{display:inline-block;margin-top:10px;font-size:12px;color:rgba(255,255,255,.65);text-decoration:none;letter-spacing:.1px}
   .hub-back:hover{color:#fff}
+  #retryBtn{display:block;margin:8px auto 0;padding:6px 18px;background:var(--accent,#4e80ee);color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer}
+  #retryBtn:hover{opacity:.85}
   .brand .logo{
     width:40px; height:40px; border-radius:12px;
     background:rgba(255,255,255,.22); color:#fff;
@@ -452,6 +454,7 @@
       </div>
     </div>
     <div class="status" id="status" role="status" aria-live="polite"></div>
+    <button id="retryBtn" hidden>Réessayer</button>
   </div>
 
   <div id="results" aria-live="polite"></div>
@@ -640,6 +643,7 @@
   }
 
   async function loadIndex() {
+    retryBtn.hidden = true;
     statusEl.classList.add('loading');
     setStatus('Chargement des données…');
     rankCatSel.innerHTML = '<option value="" disabled selected>Chargement…</option>';
@@ -677,8 +681,10 @@
     } catch(e) {
       statusEl.classList.remove('loading');
       setStatus('Impossible de charger l\'index : ' + humanError(e), true);
+      retryBtn.hidden = false;
     }
   }
+  retryBtn.onclick = loadIndex;
 
   // --- URL state ---
   function parseUrlState() {
@@ -707,6 +713,7 @@
 
   // --- DOM refs ---
   const statusEl = document.getElementById('status');
+  const retryBtn = document.getElementById('retryBtn');
   const resultsEl = document.getElementById('results');
   const rankYearSel = document.getElementById('rankYearSel');
   const rankCatSel = document.getElementById('rankCatSel');
