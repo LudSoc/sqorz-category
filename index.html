@@ -92,6 +92,8 @@
   .hub-back:hover{color:#fff}
   #retryBtn:not([hidden]){display:block;margin:8px auto 0;padding:6px 18px;background:var(--accent,#4e80ee);color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer}
   #retryBtn:hover{opacity:.85}
+  .progress{height:6px;background:var(--card-soft);border:1px solid var(--line);border-radius:99px;overflow:hidden;margin-top:10px}
+  .progress>div{height:100%;width:0;transition:width .2s;background:linear-gradient(90deg,var(--teal),var(--sky),var(--lavender))}
   .brand .logo{
     width:40px; height:40px; border-radius:12px;
     background:rgba(255,255,255,.22); color:#fff;
@@ -458,6 +460,7 @@
       </div>
     </div>
     <div class="status" id="status" role="status" aria-live="polite"></div>
+    <div class="progress" id="progressWrap" hidden><div id="progressBar"></div></div>
     <button id="retryBtn" hidden>Réessayer</button>
   </div>
 
@@ -649,6 +652,14 @@
 
   const retryBtn = document.getElementById('retryBtn');
 
+  function setProgress(done, total) {
+    const wrap = document.getElementById('progressWrap');
+    const bar  = document.getElementById('progressBar');
+    if (!total) { wrap.hidden = true; return; }
+    wrap.hidden = false;
+    bar.style.width = Math.min(99, Math.round(100 * done / total)) + '%';
+  }
+
   async function loadIndex() {
     retryBtn.hidden = true;
     statusEl.classList.add('loading');
@@ -659,7 +670,25 @@
     try {
       const res = await fetch(INDEX_URL);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      pilotsIndex = expandIndex(await res.json());
+      const compressed = !!res.headers.get('Content-Encoding');
+      const rawTotal = parseInt(res.headers.get('Content-Length') || '0', 10);
+      const total = compressed ? 83_000_000 : (rawTotal || 83_000_000);
+      const reader = res.body.getReader();
+      const chunks = [];
+      let received = 0;
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+        received += value.length;
+        setProgress(received, total);
+        setStatus(`Chargement… ${(received / 1048576).toFixed(0)} Mo`);
+      }
+      setProgress(0, 0);
+      const allBytes = new Uint8Array(received);
+      let offset = 0;
+      for (const chunk of chunks) { allBytes.set(chunk, offset); offset += chunk.length; }
+      pilotsIndex = expandIndex(JSON.parse(new TextDecoder().decode(allBytes)));
       accounts = (pilotsIndex.orgs || []).slice().sort((a, b) => a.accountName.localeCompare(b.accountName, 'fr'));
       // Sélection par défaut : orgs "officielles"
       for (const a of accounts) {
@@ -686,6 +715,7 @@
         searchRanking();
       }
     } catch(e) {
+      setProgress(0, 0);
       statusEl.classList.remove('loading');
       setStatus('Impossible de charger l\'index : ' + humanError(e), true);
       retryBtn.hidden = false;
