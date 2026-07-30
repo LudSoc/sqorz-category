@@ -195,6 +195,7 @@
     padding:7px 6px; text-align:right; white-space:nowrap;
     border-bottom:2px solid var(--line-strong);
     position:sticky; top:0; z-index:1;
+    background:var(--card);
   }
   .ranking-table th.no-sort{cursor:default}
   .ranking-table th.sorted{color:var(--accent)}
@@ -238,7 +239,7 @@
   .pilot-search-icon{font-size:13px; color:var(--muted); flex-shrink:0}
   .pilot-search-input{border:none; outline:none; background:transparent; font:inherit; font-size:12px; color:var(--ink); width:140px}
   .pilot-search-input::placeholder{color:var(--muted)}
-  .pilot-search-clear{border:none; background:none; cursor:pointer; color:var(--muted); font-size:14px; padding:0; line-height:1; display:none}
+  .pilot-search-clear{border:none; background:none; cursor:pointer; color:var(--muted); font-size:14px; padding:0; line-height:1; display:none; min-width:36px; min-height:36px}
   .pilot-search-clear.visible{display:block}
   tr.row-hidden{display:none}
   tr.row-highlight td:nth-child(2){background:rgba(59,130,246,.08)}
@@ -481,6 +482,7 @@
     <div class="pilot-modal-header">
       <div class="pilot-modal-name" id="pilotModalName"></div>
       <div class="pilot-modal-sub" id="pilotModalSub"></div>
+      <div class="pilot-modal-sub" id="pilotModalAge" style="font-size:11px;color:var(--muted);margin-top:1px"></div>
       <button class="pilot-modal-close" id="pilotModalClose" aria-label="Fermer">✕</button>
     </div>
     <div class="pilot-modal-body" id="pilotModalBody"></div>
@@ -883,11 +885,18 @@
     rankBtn.disabled = !globalDataReady || !rankCatSel.value;
   }
 
+  // --- Debounced search ---
+  let _searchTimer;
+  function debouncedSearch() {
+    clearTimeout(_searchTimer);
+    _searchTimer = setTimeout(searchRanking, 150);
+  }
+
   rankCatSel.addEventListener('change', updateRankBtnEnabled);
   rankYearSel.addEventListener('change', () => {
     replaceUrlState();
     updateRankingForm();
-    if (currentRows.length > 0) searchRanking();
+    if (currentRows.length > 0) debouncedSearch();
   });
 
   // --- Stats computation (from test_sqorz) ---
@@ -967,6 +976,12 @@
     const year = rankYearSel.value;
     const selectedKey = rankCatSel.value;
     if (!selectedKey) { setStatus('Choisir une catégorie.', true); return; }
+    if (selectedCodes.size === 0) {
+      setStatus('');
+      resultsEl.innerHTML = `<div class="card"><div class="empty-state">Aucune organisation sélectionnée — choisissez au moins une organisation pour afficher les résultats.</div></div>`;
+      currentRows = [];
+      return;
+    }
     currentClassName = classLabel(selectedKey);
     currentYearFilter = 'all';
 
@@ -1052,7 +1067,7 @@
     const totalPilots = rows.length;
     const winners = rows.filter(r => r.stats.wins > 0).length;
     const stat = (icon, val, label) =>
-      `<div class="cat-stat"><span class="cat-stat-icon">${icon}</span><span class="cat-stat-v">${val}</span><span class="cat-stat-k">${label}</span></div>`;
+      `<div class="cat-stat"><span class="cat-stat-icon" aria-hidden="true">${icon}</span><span class="cat-stat-v">${val}</span><span class="cat-stat-k">${label}</span></div>`;
     return `<div class="cat-stats">
       ${stat('🚴', totalPilots, 'Pilotes')}
       ${stat('🥇', winners, 'Vainqueurs')}
@@ -1062,10 +1077,10 @@
 
   function renderYearFilterBar() {
     const a = currentYearFilter;
-    return `<div class="year-filter">
-      <button class="yf-btn${a==='all'?' active':''}" data-yf="all">Toutes</button>
-      <button class="yf-btn${a==='1'?' active':''}" data-yf="1">1ère année</button>
-      <button class="yf-btn${a==='2'?' active':''}" data-yf="2">2ème année</button>
+    return `<div class="year-filter" role="tablist">
+      <button class="yf-btn${a==='all'?' active':''}" data-yf="all" role="tab" aria-selected="${a==='all'}">Toutes</button>
+      <button class="yf-btn${a==='1'?' active':''}" data-yf="1" role="tab" aria-selected="${a==='1'}">1ère année</button>
+      <button class="yf-btn${a==='2'?' active':''}" data-yf="2" role="tab" aria-selected="${a==='2'}">2ème année</button>
     </div>`;
   }
 
@@ -1109,7 +1124,7 @@
       case 'qualifRate':      return s.entries ? s.qualifReached / s.entries : 0;
       case 'finaleRate':      return s.entries ? s.finalsReached / s.entries : 0;
       case 'mancheTop4Rate':  return s.manchesRaced ? s.mancheTop4 / s.manchesRaced : 0;
-      default:                return 0;
+      default:                return null;
     }
   }
 
@@ -1123,6 +1138,10 @@
     const sorted = [...filteredRows].sort((a, b) => {
       const av = getColValue(a, sortCol);
       const bv = getColValue(b, sortCol);
+      // Nulls always last regardless of sort direction
+      if (av == null && bv == null) return 0;
+      if (av == null) return 1;
+      if (bv == null) return -1;
       const cmp = typeof av === 'string' ? av.localeCompare(bv, 'fr') : av - bv;
       return sortDir === 'asc' ? cmp : -cmp;
     });
@@ -1132,7 +1151,7 @@
     const thHTML = COLS.map(col => {
       if (!col.sortable) return `<th class="no-sort">${col.label}</th>`;
       const isSorted = col.key === sortCol;
-      const arrow = isSorted ? `<span class="sort-arrow">${sortDir === 'asc' ? '▲' : '▼'}</span>` : '';
+      const arrow = isSorted ? `<span class="sort-arrow" aria-hidden="true">${sortDir === 'asc' ? '▲' : '▼'}</span>` : '';
       return `<th class="${isSorted ? 'sorted' : ''}" data-col="${col.key}">${escape(col.label)}${arrow}</th>`;
     }).join('');
 
@@ -1186,7 +1205,7 @@
       <div class="card cat-stats-bar">
         ${renderCategoryStats(rows)}
         <div class="pilot-search-wrap">
-          <span class="pilot-search-icon">🔍</span>
+          <span class="pilot-search-icon" aria-hidden="true">🔍</span>
           <input class="pilot-search-input" id="pilotSearchInput" type="search" placeholder="Rechercher un pilote…" autocomplete="off">
           <button class="pilot-search-clear" id="pilotSearchClear" title="Effacer">✕</button>
         </div>
@@ -1296,6 +1315,7 @@
     resultsEl.querySelectorAll('.yf-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         currentYearFilter = btn.dataset.yf;
+        resultsEl.querySelectorAll('.yf-btn').forEach(b => b.setAttribute('aria-selected', String(b === btn)));
         renderRankingTable(currentRows, currentSortCol, currentSortDir);
       });
     });
@@ -1355,6 +1375,8 @@
 
   function openPilotDetail(row) {
     modalName.textContent = row.name;
+    const ageEl = document.getElementById('pilotModalAge');
+    if (ageEl) ageEl.textContent = row.stats.dominantAge != null ? `${row.stats.dominantAge} ans` : '';
     const age = row.stats.dominantAge;
     const yearLabel = age != null && isUCat()
       ? ` · ${age} ans · ${age % 2 === 1 ? '1ère année' : '2ème année'}`
@@ -1433,6 +1455,11 @@
   (() => {
     const currentYear = new Date().getFullYear();
     const frag = document.createDocumentFragment();
+    const allOpt = document.createElement('option');
+    allOpt.value = '';
+    allOpt.textContent = 'Toutes les années';
+    allOpt.selected = true;
+    frag.appendChild(allOpt);
     for (let y = currentYear; y >= 2023; y--) {
       const opt = document.createElement('option');
       opt.value = String(y);
