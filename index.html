@@ -1407,8 +1407,8 @@
     const rows = sorted.map(m => {
       const c = m.competitor;
       const fmtResult = r => {
-        if (r >= 103000) return 'DSQ';
-        if (r >= 101000) return 'DNS';
+        if (r >= 103000) return 'DNS';
+        if (r >= 101000) return 'DSQ';
         if (r >= 100000) return 'DNF';
         return String(r);
       };
