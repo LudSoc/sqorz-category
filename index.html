@@ -497,7 +497,10 @@
 
 <script>
 (() => {
-  const INDEX_URL = 'https://raw.githubusercontent.com/LudSoc/sqorz-stats/main/pilots-index.json';
+  const INDEX_SOURCES = [
+    'https://github.com/LudSoc/sqorz-stats/releases/latest/download/pilots-index.json',
+    'https://raw.githubusercontent.com/LudSoc/sqorz-stats/main/pilots-index.json',
+  ];
 
   function humanError(e) {
     if (!e) return 'Erreur inconnue.';
@@ -676,8 +679,15 @@
     rankCatSel.disabled = true;
     rankBtn.disabled = true;
     try {
-      const res = await fetch(INDEX_URL);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      let res = null, lastErr = null;
+      for (const url of INDEX_SOURCES) {
+        try {
+          const r = await fetch(url);
+          if (r.ok) { res = r; break; }
+          lastErr = new Error(`HTTP ${r.status}`);
+        } catch (e) { lastErr = e; console.warn('[category] source indisponible : ' + url, e && e.message); }
+      }
+      if (!res) throw lastErr || new Error('Index indisponible.');
       const compressed = !!res.headers.get('Content-Encoding');
       const rawTotal = parseInt(res.headers.get('Content-Length') || '0', 10);
       const total = compressed ? 83_000_000 : (rawTotal || 83_000_000);
