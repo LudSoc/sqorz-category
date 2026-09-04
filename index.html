@@ -480,6 +480,7 @@
   <span>© <span id="footerYear"></span></span>
   <span class="footer-sep">·</span>
   <span>Projet communautaire non officiel, non affilié à Sqorz</span>
+  <span id="dataDateWrap" hidden><span class="footer-sep">·</span><span>Données du <span id="dataDate"></span></span></span>
 </footer>
 <script>document.getElementById('footerYear').textContent = new Date().getFullYear();</script>
 
@@ -708,6 +709,17 @@
 
   const expandBytes = bytes => expandIndex(JSON.parse(new TextDecoder().decode(bytes)));
 
+  // Date « données du … » affichée dans le pied de page (fraîcheur de l'index).
+  function showDataDate(iso) {
+    const wrap = document.getElementById('dataDateWrap');
+    const el = document.getElementById('dataDate');
+    if (!wrap || !el || !iso) return;
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return;
+    el.textContent = d.toLocaleDateString('fr-FR');
+    wrap.hidden = false;
+  }
+
   async function loadIndexCached() {
     let wantSha = null;
     try {
@@ -799,6 +811,7 @@
       updateRankingForm();
       statusEl.classList.remove('loading');
       setStatus('');
+      showDataDate(pilotsIndex.generated);
       if (urlState.orgs !== null || urlState.year) {
         searchRanking();
       }
