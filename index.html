@@ -129,8 +129,10 @@
   .field.col-btn{grid-column:span 2; align-items:stretch}
   @media(max-width:880px){
     .field.col-year,.field.col-cat,.field.col-btn{grid-column:span 12}
+    .cat-selector-panel{position:static; margin-top:6px}
   }
-  label{font-size:11px; font-weight:600; color:var(--muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:.5px}
+  label,.field-label{font-size:11px; font-weight:600; color:var(--muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:.5px}
+  .field-label{display:block}
   .control{
     font:inherit; padding:10px 12px; border:1px solid var(--line);
     border-radius:9px; background:var(--card); color:var(--ink);
@@ -153,44 +155,61 @@
   .status.loading::before{content:''; display:inline-block; width:16px; height:16px; border:2px solid color-mix(in srgb,var(--accent) 30%,transparent); border-top-color:var(--accent); border-radius:50%; animation:spin .7s linear infinite; flex-shrink:0}
   @keyframes spin{to{transform:rotate(360deg)}}
 
-  /* Org selector */
-  .org-selector{margin-bottom:14px}
-  .org-selector-summary{
-    display:inline-flex; align-items:center; gap:6px;
-    font-size:12.5px; font-weight:600; color:var(--ink-2);
-    cursor:pointer; padding:7px 12px;
-    background:var(--card-soft); border:1px solid var(--line);
-    border-radius:8px; user-select:none;
-    transition:border-color .15s, background .15s;
+  /* Cat selector (liste custom : une ligne par catégorie + orgas concernées) */
+  .cat-selector{position:relative}
+  .cat-selector-summary{
+    display:flex; align-items:center; justify-content:space-between; gap:8px; width:100%;
+    font:inherit; font-size:13px; font-weight:500; color:var(--ink);
+    text-align:left; cursor:pointer; padding:10px 12px;
+    background:var(--card); border:1px solid var(--line);
+    border-radius:9px; user-select:none;
+    transition:border-color .15s, box-shadow .15s, background .15s;
   }
-  .org-selector-summary:hover{border-color:var(--accent); background:color-mix(in srgb,var(--accent) 8%, transparent)}
-  .org-selector-panel{
-    margin-top:8px; padding:10px 12px;
-    background:var(--card-soft); border:1px solid var(--line); border-radius:10px;
+  .cat-selector-summary:hover{border-color:var(--accent)}
+  .cat-selector-summary:focus-visible{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%, transparent)}
+  .cat-selector-summary[aria-expanded="true"]{border-color:var(--accent)}
+  .cat-selector-chev{color:var(--muted); transition:transform .15s}
+  .cat-selector-summary[aria-expanded="true"] .cat-selector-chev{transform:rotate(180deg)}
+  .cat-selector-panel{
+    position:absolute; z-index:30; left:0; right:0; top:calc(100% + 6px);
+    background:var(--card); border:1px solid var(--line-strong); border-radius:10px;
+    box-shadow:var(--shadow); overflow:hidden;
   }
-  .org-selector-panel[hidden]{display:none}
-  .org-selector-actions{
-    display:flex; gap:8px; margin-bottom:8px; padding-bottom:8px;
-    border-bottom:1px dashed var(--line);
+  .cat-selector-panel[hidden]{display:none}
+  .cat-selector-filter{
+    width:100%; box-sizing:border-box;
+    font:inherit; font-size:12.5px; color:var(--ink);
+    padding:9px 12px; border:none; border-bottom:1px solid var(--line);
+    background:var(--card-soft);
   }
-  .org-selector-actions button{
-    font:inherit; font-size:11.5px; font-weight:600;
-    padding:4px 10px; border-radius:6px; cursor:pointer;
-    background:var(--card); border:1px solid var(--line-strong); color:var(--ink-2);
-    transition:border-color .15s, background .15s;
+  .cat-selector-filter:focus{outline:none}
+  .cat-selector-orgrow{display:flex; align-items:center; gap:8px; padding:8px 10px 7px; background:var(--card-soft); border-bottom:1px solid var(--line)}
+  .cat-selector-orgrow label{font-size:11px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; white-space:nowrap}
+  .cat-selector-orgsel{flex:1; min-width:0; font:inherit; font-size:12.5px; color:var(--ink); padding:6px 8px; border:1px solid var(--line); border-radius:7px; background:var(--card); cursor:pointer}
+  .cat-selector-orgsel:focus{outline:none; border-color:var(--accent)}
+  .cat-selector-reset{
+    font:inherit; font-size:11.5px; font-weight:600; color:var(--accent);
+    background:transparent; border:none; cursor:pointer; padding:5px 6px; border-radius:6px; white-space:nowrap;
+    transition:background .1s;
   }
-  .org-selector-actions button:hover{border-color:var(--accent); color:var(--accent-hi)}
-  .org-selector-list{
-    display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr));
-    gap:4px 12px; max-height:240px; overflow-y:auto;
+  .cat-selector-reset:hover{background:color-mix(in srgb,var(--accent) 10%, transparent)}
+  .cat-selector-reset:focus-visible{outline:2px solid var(--accent); outline-offset:-1px}
+  .cat-org-hl{color:var(--accent); font-weight:600}
+  .cat-selector-list{max-height:300px; overflow-y:auto; padding:4px}
+  .cat-selector-option{
+    display:block; width:100%; text-align:left;
+    font:inherit; cursor:pointer; padding:7px 10px;
+    border:none; background:transparent; border-radius:7px;
+    transition:background .1s;
   }
-  .org-selector-item{
-    display:flex; align-items:center; gap:7px;
-    font-size:12.5px; color:var(--ink-2); cursor:pointer;
-    padding:3px 4px; border-radius:5px; transition:background .1s;
-  }
-  .org-selector-item:hover{background:color-mix(in srgb,var(--accent) 8%, transparent)}
-  .org-selector-item input[type=checkbox]{accent-color:var(--accent); width:14px; height:14px; flex-shrink:0; cursor:pointer}
+  .cat-selector-option:hover{background:color-mix(in srgb,var(--accent) 9%, transparent)}
+  .cat-selector-option:focus-visible{outline:2px solid var(--accent); outline-offset:-2px}
+  .cat-selector-option.selected{background:color-mix(in srgb,var(--accent) 16%, transparent)}
+  .cat-selector-name{font-size:13px; font-weight:600; color:var(--ink); display:flex; align-items:baseline; gap:8px}
+  .cat-selector-name .cat-count{font-size:10.5px; font-weight:500; color:var(--muted)}
+  .cat-selector-name .cat-code{font-size:10.5px; font-weight:600; color:var(--muted)}
+  .cat-selector-orgas{font-size:11px; color:var(--muted); margin-top:2px; line-height:1.4}
+  .cat-selector-empty{padding:10px; font-size:12.5px; color:var(--muted)}
 
 
   /* Ranking table */
@@ -349,10 +368,6 @@
     .card{padding:12px; border-radius:12px; margin-bottom:12px}
     .filters{padding:12px}
 
-    /* Org selector */
-    .org-selector-list{grid-template-columns:1fr}
-    .org-selector-panel{padding:8px 10px}
-
     /* Stats bar: stats pleine largeur, puis recherche */
     .cat-stats-bar{
       flex-wrap:wrap; gap:8px; padding:10px 12px;
@@ -430,25 +445,12 @@
     </div>
     <a class="hub-back" id="hubBackLink" href="#" aria-label="Retour au Sqorz Hub">← Sqorz Hub</a>
     <h1>Sqorz · Stats Catégorie</h1>
-    <p>Comparez les performances de tous les pilotes d'une catégorie sur une saison — victoires, podiums, régularité — en agrégeant les résultats de toutes les organisations sélectionnées.</p>
+    <p>Comparez les performances de tous les pilotes d'une catégorie sur une saison — victoires, podiums, régularité — en agrégeant les résultats de toutes les organisations qui courent cette catégorie.</p>
   </div>
 </div>
 
 <main>
   <div class="card filters">
-    <div class="org-selector" id="orgSelector">
-      <div class="org-selector-summary" id="orgSelectorSummary" role="button" tabindex="0" aria-expanded="false" aria-controls="orgSelectorPanel">
-        <span id="orgSelectorLabel">Chargement des orgas…</span>
-        <span>▾</span>
-      </div>
-      <div class="org-selector-panel" id="orgSelectorPanel" hidden>
-        <div class="org-selector-actions">
-          <button type="button" id="orgSelectAll">Tout sélectionner</button>
-          <button type="button" id="orgDeselectAll">Tout désélectionner</button>
-        </div>
-        <div class="org-selector-list" id="orgSelectorList"></div>
-      </div>
-    </div>
     <div class="grid filters-row">
       <div class="field col-year">
         <label for="rankYearSel">Année</label>
@@ -456,10 +458,25 @@
         </select>
       </div>
       <div class="field col-cat">
-        <label for="rankCatSel">Catégorie</label>
-        <select id="rankCatSel" class="control" disabled>
-          <option value="" disabled selected>Chargement…</option>
-        </select>
+        <span class="field-label" id="catSelectorLabel">Catégorie — nom complet (code Sqorz)</span>
+        <div class="cat-selector" id="catSelector">
+          <button type="button" class="cat-selector-summary" id="catSelectorSummary" aria-expanded="false" aria-controls="catSelectorPanel" aria-haspopup="listbox">
+            <span id="catSelectorValue">Choisir une catégorie…</span>
+            <span class="cat-selector-chev" aria-hidden="true">▾</span>
+          </button>
+          <div class="cat-selector-panel" id="catSelectorPanel" hidden>
+            <div class="cat-selector-orgrow">
+              <label for="catOrgSel">Organisation</label>
+              <select id="catOrgSel" class="cat-selector-orgsel" autocomplete="off">
+                <option value="">Toutes les organisations</option>
+              </select>
+              <button type="button" id="catSelectorReset" class="cat-selector-reset" title="Effacer le filtre orga et la recherche">Réinitialiser</button>
+            </div>
+            <input type="search" id="catSelectorFilter" class="cat-selector-filter" placeholder="Filtrer les catégories…" autocomplete="off" aria-label="Filtrer les catégories">
+            <div class="cat-selector-list" id="catSelectorList" role="listbox" aria-label="Catégories"></div>
+            <div class="cat-selector-empty" id="catSelectorEmpty" hidden>Aucune catégorie trouvée.</div>
+          </div>
+        </div>
       </div>
       <div class="field col-btn">
         <label>&nbsp;</label>
@@ -526,123 +543,25 @@
     ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])
   );
 
-  // Groupes : plusieurs perpetualClassCodes → une seule entrée dans le dropdown.
-  // Utilisés pour U7–U13 où des codes d'âge (G12, 11FR…) et variantes régionales/novices
-  // correspondent à la même catégorie nationale.
-  const CLASS_GROUPS = [
-    // U7
-    { key:'g:U7G',  label:'U7 Garçon',  codes:new Set(['U7GR','7GR','U7']) },
-    { key:'g:U7F',  label:'U7 Fille',   codes:new Set(['U7FR','7FR','U7.C']) },
-    // U9
-    { key:'g:U9G',  label:'U9 Garçon',  codes:new Set(['U9GR','9GR','8GR','U9G','U9GNR','U9']) },
-    { key:'g:U9F',  label:'U9 Fille',   codes:new Set(['U9FR','9FR','8FR','U9F','U9.C']) },
-    // U11
-    { key:'g:U11G', label:'U11 Garçon', codes:new Set(['U11GR','11GR','10GR','U11G','U11GNR','U11']) },
-    { key:'g:U11F', label:'U11 Fille',  codes:new Set(['U11FR','11FR','10FR','U11F','U11.C']) },
-    // U13
-    { key:'g:U13G', label:'U13 Garçon', codes:new Set(['U13GR','U13G','U13GNR','U13','G12','G13','12GR','13GR']) },
-    { key:'g:U13F', label:'U13 Fille',  codes:new Set(['U13FR','U13F','U13FNR','U13.C','F12','F13','12FR','13FR','F13N']) },
-    // U15
-    { key:'g:U15G', label:'U15 Garçon', codes:new Set(['U15GR','U15G','U15GNR','U15','G14','G14N','G14C','G15','G15N','G15C','14GR']) },
-    { key:'g:U15F', label:'U15 Fille',  codes:new Set(['U15FR','U15F','U15FNR','U15.C','F14','F14N','F15','F15N','F15C','14FR']) },
-    // U17
-    { key:'g:U17G', label:'U17 Garçon',      codes:new Set(['U17GR','U17G','U17GNR']) },
-    { key:'g:U17F', label:'U17 Fille',        codes:new Set(['U17FR','U17F']) },
-    // Junior
-    { key:'g:JH',   label:'Junior Homme',     codes:new Set(['JH','JHR']) },
-    { key:'g:JF',   label:'Junior Fille',     codes:new Set(['JF','JFR']) },
-  ];
-  const CODE_TO_GROUP = new Map();
-  for (const g of CLASS_GROUPS) for (const c of g.codes) CODE_TO_GROUP.set(c, g);
-
-  // Labels pour les codes non regroupés (U15+, adultes, cruiser…)
-  const CLASS_NAMES = {
-    // Codes d'âge anciens non couverts par les groupes
-    F8:'Fille 8', F9:'Fille 9', F10:'Fille 10', F11:'Fille 11',
-    G8:'Garçon 8', G9:'Garçon 9', G10:'Garçon 10', G11:'Garçon 11',
-    F16:'Fille 16', F16N:'Fille 16 Nationale', F16C:'Fille 16 Championnat',
-    // U17
-    U17GR:'U17 Garçon', U17FR:'U17 Fille', U17:'U17', U17G:'U17 Garçon', U17F:'U17 Fille',
-    U17GNR:'U17 Garçon Novice',
-    G16:'Garçon 16', G16N:'Garçon 16 National', G16C:'Garçon 16 Championnat',
-    U17GCHL:'U17 Garçon Challenge', U17FCHL:'U17 Fille Challenge',
-    U17GRCHP:'U17 Garçon Championnat', U17FRCHP:'U17 Fille Championnat',
-    // U19
-    JH:'Junior Homme', JF:'Junior Fille',
-    JHR:'Junior Homme Régional', JFR:'Junior Fille Régionale',
-    U19H:'U19 Homme', U19F:'U19 Fille',
-    U19HR:'U19 Homme Régional', U19FR:'U19 Fille Régionale',
-    // U23
-    U23H:'U23 Homme', U23F:'U23 Femme',
-    U23HR:'U23 Homme Régional', U23FR:'U23 Femme Régionale',
-    // Elite
-    EH:'Élite Homme', EF:'Élite Femme',
-    EHR:'Élite Régionale Homme', EFR:'Élite Régionale Femme',
-    // Seniors
-    H1724:'Homme 17/24', H1724N:'Homme 17/24 National', H1724R:'Homme 17/24 Régional',
-    H1729:'Homme 17/29', H1729R:'Homme 17/29 Régional',
-    H17:'Homme 17+', 'H17+':'Homme 17+',
-    H2529:'Homme 25/29', H2529N:'Homme 25/29 National', H2529R:'Homme 25/29 Régional',
-    H3034:'Homme 30/34', H3039:'Homme 30/39',
-    'H30+':'Homme 30+', 'H30+N':'Homme 30+ National', 'H30+R':'Homme 30+ Régional',
-    'H35+':'Homme 35+', 'H40+':'Homme 40+',
-    F1724:'Femme 17/24', F1724N:'Femme 17/24 Nationale', F1724R:'Femme 17/24 Régionale',
-    'F17+':'Femme 17+', 'F17+N':'Femme 17+ Nationale', 'F17+R':'Femme 17+ Régionale',
-    'F15+R':'Femme 15+ Régionale',
-    'F25+':'Femme 25+', 'F25+N':'Femme 25+ Nationale', 'F25+R':'Femme 25+ Régionale',
-    // Divers seniors
-    'C30+':'30 ans et + Hommes', C1729:'17/29 ans Hommes', C1724:'17/24 ans', 'C15+F':'15 ans et + Femmes',
-    'MA30+':'Masters 30+',
-    // Supercross
-    SGR:'Supercross Garçon', SFR:'Supercross Fille', SG:'Supercross Garçon', SF:'Supercross Fille',
-    // Time Trial
-    TT15:'Time Trial U15+',
-    // Cruiser Homme
-    CRH1724:'Cruiser Homme 17/24', CRH1724N:'Cruiser Homme 17/24 National', CRH1724R:'Cruiser Homme 17/24 Régional',
-    CRH1729:'Cruiser Homme 17/29',
-    CRH2529:'Cruiser Homme 25/29', CRH2529N:'Cruiser Homme 25/29 National', CRH2529R:'Cruiser Homme 25/29 Régional',
-    CRH3034:'Cruiser Homme 30/34', CRH3039:'Cruiser Homme 30/39', CRH3039N:'Cruiser Homme 30/39 National', CRH3039R:'Cruiser Homme 30/39 Régional',
-    CRH3539:'Cruiser Homme 35/39', CRH3539R:'Cruiser Homme 35/39 Régional',
-    CRH4044:'Cruiser Homme 40/44', CRH4044N:'Cruiser Homme 40/44 National', CRH4044R:'Cruiser Homme 40/44 Régional', CRH4044Rxx:'Cruiser Homme 40/44 Régional',
-    CRH4049:'Cruiser Homme 40/49', CRH4549:'Cruiser Homme 45/49',
-    'CRH40+':'Cruiser Homme 40+', 'CRH40+R':'Cruiser Homme 40+ Régional',
-    'CRH45+':'Cruiser Homme 45+', 'CRH45+N':'Cruiser Homme 45+ National', 'CRH45+R':'Cruiser Homme 45+ Régional',
-    'CRH50+':'Cruiser Homme 50+',
-    'CR30+R':'Cruiser 30+ Régional', 'CR30+R.C':'Cruiser 30+ Régional Fille',
-    CR1329R:'Cruiser 13/29 Régional', 'CR1329R.C':'Cruiser 13/29 Régional Fille',
-    CR1724:'Cruiser 17/24', CR1724N:'Cruiser 17/24 National',
-    CR2529:'Cruiser 25/29', CR2529N:'Cruiser 25/29 National',
-    CR3034:'Cruiser 30/34', CR3039:'Cruiser 30/39', CR3039N:'Cruiser 30/39 National',
-    CR3539:'Cruiser 35/39', CR4044:'Cruiser 40/44', CR4044N:'Cruiser 40/44 National',
-    'CR45+':'Cruiser 45+',
-    // Cruiser Femme
-    CRF1729:'Cruiser Femme 17/29', CRF1729N:'Cruiser Femme 17/29 Nationale', CRF1729R:'Cruiser Femme 17/29 Régionale',
-    CRF1924:'Cruiser Femme 19/24', CRF2529:'Cruiser Femme 25/29',
-    'CRF17+':'Cruiser Femme 17+', 'CRF17+R':'Cruiser Femme 17+ Régionale',
-    'CRF30+':'Cruiser Femme 30+', 'CRF30+N':'Cruiser Femme 30+ Nationale', 'CRF30+R':'Cruiser Femme 30+ Régionale',
-    CRF3039:'Cruiser Femme 30/39', 'CRF40+':'Cruiser Femme 40+',
-    // Cruiser U15
-    CRU15G:'Cruiser U15 Garçon', CRU15GN:'Cruiser U15 Garçon National', CRU15GR:'Cruiser U15 Garçon Régional',
-    CRU15F:'Cruiser U15 Fille', CRU15FN:'Cruiser U15 Fille Nationale', CRU15FR:'Cruiser U15 Fille Régionale',
-    // Cruiser U17
-    CRU17G:'Cruiser U17 Garçon', CRU17GN:'Cruiser U17 Garçon National', CRU17GR:'Cruiser U17 Garçon Régional',
-    CRU17F:'Cruiser U17 Fille', CRU17FN:'Cruiser U17 Fille Nationale', CRU17FR:'Cruiser U17 Fille Régionale',
-    // Cruiser U19
-    CRU19HR:'Cruiser U19 Homme Régional', CRU19F:'Cruiser U19 Fille',
-  };
-
-  function classLabel(key) {
-    if (key.startsWith('g:')) {
-      const g = CLASS_GROUPS.find(x => x.key === key);
-      return g ? g.label : key;
-    }
-    return CLASS_NAMES[key] || key;
+  // Une « catégorie » = le nom exact de la classe Sqorz (perpetualClassCode).
+  // Aucun regroupement : chaque code a sa propre entrée dans la liste, avec la
+  // liste des organisations qui courent cette classe exacte.
+  // Catégorie de parité d'âge (bandes U7…U15) → filtre « 1ère / 2ème année ».
+  function isYouthParityCode(code) {
+    if (!code || code.includes('+')) return false;
+    let m = /^U?(\d{1,2})(?:[A-Z][A-Z0-9]*|\.C|\.)?$/i.exec(code);
+    if (!m) m = /^[GF](\d{1,2})(?:[A-Z][A-Z0-9]*)?$/i.exec(code);
+    if (!m) return false;
+    const band = +m[1];
+    return band >= 7 && band <= 15;
   }
 
   // --- State ---
   let pilotsIndex = null;
-  let accounts = [];
-  let selectedCodes = new Set();
+  let currentCatCode = ''; // code Sqorz exact de la catégorie sélectionnée
+  let catList = [];        // [{ code, orgs:[…] }] pour l'année sélectionnée
+  let orgList = [];        // orgas de l'année (filtre de la liste des catégories)
+  let currentOrgFilter = ''; // orga sélectionnée dans le panneau (n'affecte PAS le classement)
   let globalDataReady = false;
 
   function expandIndex(idx) {
@@ -656,6 +575,7 @@
             ...(d.pc         ? { phaseCode:      d.pc  } : {}),
             ...(d.pbc        ? { phaseBlockCode: d.pbc } : {}),
             ...(d.rn  != null ? { raceName:       d.rn  } : {}),
+            ...(d.tm != null ? { time:         d.tm } : {}),
           }));
         }
       }
@@ -784,63 +704,48 @@
     retryBtn.hidden = true;
     statusEl.classList.add('loading');
     setStatus('Chargement des données…');
-    rankCatSel.innerHTML = '<option value="" disabled selected>Chargement…</option>';
-    rankCatSel.disabled = true;
+    catSelectorValue.textContent = 'Chargement…';
     rankBtn.disabled = true;
     try {
       pilotsIndex = await loadIndexCached();
-      accounts = (pilotsIndex.orgs || []).slice().sort((a, b) => a.accountName.localeCompare(b.accountName, 'fr'));
-      // Sélection par défaut : orgs "officielles"
-      for (const a of accounts) {
-        if (isDefaultOrg(a.accountName)) selectedCodes.add(a.accountCode);
-      }
-      // Override depuis l'URL si présent
       const urlState = parseUrlState();
-      if (urlState.orgs !== null) {
-        selectedCodes.clear();
-        const knownCodes = new Set(accounts.map(a => a.accountCode));
-        urlState.orgs.filter(c => knownCodes.has(c)).forEach(code => selectedCodes.add(code));
+      if (urlState.year) rankYearSel.value = urlState.year;
+      buildCatList();
+      if (urlState.cat && catList.some(e => e.code === urlState.cat)) {
+        currentCatCode = urlState.cat;
+        catSelectorValue.textContent = catDisplayName(currentCatCode);
+      } else {
+        currentCatCode = '';
+        catSelectorValue.textContent = 'Choisir une catégorie…';
       }
-      if (urlState.year) {
-        const sel = document.getElementById('rankYearSel');
-        if (sel) sel.value = urlState.year;
-      }
-      renderOrgSelectorList();
-      updateOrgSelectorUI();
       globalDataReady = true;
-      updateRankingForm();
+      updateRankBtnEnabled();
       statusEl.classList.remove('loading');
       setStatus('');
       showDataDate(pilotsIndex.generated);
-      if (urlState.orgs !== null || urlState.year) {
+      if (currentCatCode) {
         searchRanking();
       }
     } catch(e) {
       setProgress(0, 0);
       statusEl.classList.remove('loading');
+      catSelectorValue.textContent = 'Choisir une catégorie…';
       setStatus('Impossible de charger l\'index : ' + humanError(e), true);
       retryBtn.hidden = false;
     }
   }
   retryBtn.onclick = loadIndex;
 
-  // --- URL state ---
+  // --- URL state (?cat= code exact Sqorz & ?year=) ---
   function parseUrlState() {
     const p = new URLSearchParams(location.search);
-    const orgsRaw = p.get('orgs');
-    return {
-      orgs: orgsRaw ? orgsRaw.split(',').filter(Boolean) : null,
-      year: p.get('year') || ''
-    };
+    return { cat: p.get('cat') || '', year: p.get('year') || '' };
   }
   function buildUrl() {
     const u = new URL(location.href);
-    if (accounts.length > 0 && selectedCodes.size < accounts.length) {
-      u.searchParams.set('orgs', [...selectedCodes].join(','));
-    } else {
-      u.searchParams.delete('orgs');
-    }
-    const year = document.getElementById('rankYearSel')?.value || '';
+    if (currentCatCode) u.searchParams.set('cat', currentCatCode);
+    else u.searchParams.delete('cat');
+    const year = rankYearSel?.value || '';
     if (year) u.searchParams.set('year', year);
     else u.searchParams.delete('year');
     return u.pathname + (u.search || '');
@@ -853,81 +758,23 @@
   const statusEl = document.getElementById('status');
   const resultsEl = document.getElementById('results');
   const rankYearSel = document.getElementById('rankYearSel');
-  const rankCatSel = document.getElementById('rankCatSel');
   const rankBtn = document.getElementById('rankBtn');
+  const catSelectorSummary = document.getElementById('catSelectorSummary');
+  const catSelectorValue  = document.getElementById('catSelectorValue');
+  const catSelectorPanel   = document.getElementById('catSelectorPanel');
+  const catSelectorList    = document.getElementById('catSelectorList');
+  const catSelectorFilter  = document.getElementById('catSelectorFilter');
+  const catSelectorEmpty   = document.getElementById('catSelectorEmpty');
+  const catOrgSel          = document.getElementById('catOrgSel');
+  const catSelectorReset   = document.getElementById('catSelectorReset');
 
   // --- Sorting state ---
   let currentRows = [];
   let currentSortCol = 'avgPct';
   let currentSortDir = 'asc';
-  let currentClassName = '';
   let currentYearFilter = 'all';
   let currentEventCount = 0;
   let currentMobileStat = 4; // index 1-based, 4 = Victoires par défaut
-
-  // --- Org selector ---
-  function isDefaultOrg(accountName) {
-    const n = norm(accountName);
-    return n.includes('bmx') && (n.includes('bourgogne') || n.includes('grand est'));
-  }
-
-  function updateOrgSelectorUI() {
-    const label = document.getElementById('orgSelectorLabel');
-    if (label) label.textContent = `${selectedCodes.size} orga(s) sélectionnée(s)`;
-    document.querySelectorAll('#orgSelectorList input[type=checkbox]').forEach(cb => {
-      cb.checked = selectedCodes.has(cb.value);
-    });
-  }
-
-  function renderOrgSelectorList() {
-    const list = document.getElementById('orgSelectorList');
-    if (!list) return;
-    list.innerHTML = accounts.map(a => {
-      const checked = selectedCodes.has(a.accountCode) ? ' checked' : '';
-      return `<label class="org-selector-item">
-        <input type="checkbox" value="${escape(a.accountCode)}"${checked}>
-        <span>${escape(a.accountName)}</span>
-      </label>`;
-    }).join('');
-    list.querySelectorAll('input[type=checkbox]').forEach(cb => {
-      cb.addEventListener('change', () => {
-        if (cb.checked) selectedCodes.add(cb.value);
-        else selectedCodes.delete(cb.value);
-        updateOrgSelectorUI();
-        replaceUrlState();
-        // Reload data for new org selection
-        onOrgSelectionChanged();
-      });
-    });
-  }
-
-  function onOrgSelectionChanged() {
-    updateRankingForm();
-  }
-
-  // Org selector panel toggle
-  const orgSummary = document.getElementById('orgSelectorSummary');
-  const orgPanel = document.getElementById('orgSelectorPanel');
-  orgSummary.addEventListener('click', () => {
-    const isOpen = !orgPanel.hidden;
-    orgPanel.hidden = isOpen;
-    orgSummary.setAttribute('aria-expanded', String(!isOpen));
-  });
-  orgSummary.addEventListener('keydown', e => {
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); orgSummary.click(); }
-  });
-  document.getElementById('orgSelectAll').addEventListener('click', () => {
-    accounts.forEach(a => selectedCodes.add(a.accountCode));
-    updateOrgSelectorUI();
-    replaceUrlState();
-    onOrgSelectionChanged();
-  });
-  document.getElementById('orgDeselectAll').addEventListener('click', () => {
-    selectedCodes.clear();
-    updateOrgSelectorUI();
-    replaceUrlState();
-    onOrgSelectionChanged();
-  });
 
   // --- Status ---
   function setStatus(msg, isError = false) {
@@ -935,53 +782,180 @@
     statusEl.classList.toggle('error', isError);
   }
 
-  // --- Form update after load ---
-  function updateRankingForm() {
-    if (!pilotsIndex) return;
+  // Nom « complet » d'une catégorie : la variante className la plus fréquente dans les données.
+  function dominantClassName(names) {
+    let best = '', bestCount = 0;
+    for (const [name, count] of names) {
+      if (count > bestCount) { best = name; bestCount = count; }
+    }
+    return best;
+  }
+
+  // Reconstruit le <select> des orgas de l'année (filtre de la liste des catégories).
+  function rebuildCatOrgSel() {
+    const prev = catOrgSel.value;
+    catOrgSel.innerHTML = '';
+    const allOpt = document.createElement('option');
+    allOpt.value = '';
+    allOpt.textContent = 'Toutes les organisations';
+    catOrgSel.appendChild(allOpt);
+    for (const o of orgList) {
+      const opt = document.createElement('option');
+      opt.value = o;
+      opt.textContent = o;
+      catOrgSel.appendChild(opt);
+    }
+    catOrgSel.value = orgList.includes(prev) ? prev : '';
+    if (currentOrgFilter && !orgList.includes(currentOrgFilter)) currentOrgFilter = '';
+  }
+
+  // --- Liste des catégories : chaque classe Sqorz exacte + son nom complet + ses organisations ---
+  function buildCatList() {
+    catList = [];
     const year = rankYearSel.value;
-    // Clés présentes dans les données : group key (g:…) ou perpetualClassCode brut
-    const keySet = new Set();
+    const map = new Map(); // code → { code, names:Map<className,count>, orgs:Set<accountName> }
+    const orgSet = new Set(); // orgas ayant des événements cette année
     for (const { account, event, classes } of (pilotsIndex.events || [])) {
-      if (!selectedCodes.has(account.accountCode)) continue;
       if (year && !(event.eventDate || '').startsWith(year + '-')) continue;
+      if (account.accountName) orgSet.add(account.accountName);
       for (const cls of (classes || [])) {
         const code = cls.perpetualClassCode;
         if (!code) continue;
-        const grp = CODE_TO_GROUP.get(code);
-        keySet.add(grp ? grp.key : code);
+        let e = map.get(code);
+        if (!e) { e = { code, names: new Map(), orgs: new Set() }; map.set(code, e); }
+        const name = (cls.className || '').trim();
+        if (name) e.names.set(name, (e.names.get(name) || 0) + 1);
+        if (account.accountName) e.orgs.add(account.accountName);
       }
     }
-    const sorted = [...keySet].sort((a, b) =>
-      classLabel(a).localeCompare(classLabel(b), 'fr', { sensitivity: 'base' })
-    );
+    catList = [...map.values()]
+      .map(e => ({ code: e.code, name: dominantClassName(e.names), orgs: [...e.orgs].sort((a, b) => a.localeCompare(b, 'fr')) }))
+      .sort((a, b) => a.code.localeCompare(b.code, 'fr', { sensitivity: 'base' }));
+    orgList = [...orgSet].sort((a, b) => a.localeCompare(b, 'fr'));
+    rebuildCatOrgSel();
+  }
 
-    const prevKey = rankCatSel.value;
-    rankCatSel.innerHTML = '';
-    rankCatSel.disabled = false;
-    if (sorted.length === 0) {
-      rankCatSel.innerHTML = '<option value="" disabled selected>Aucune catégorie trouvée</option>';
-      rankCatSel.disabled = true;
-    } else {
-      const placeholder = document.createElement('option');
-      placeholder.value = '';
-      placeholder.disabled = true;
-      placeholder.textContent = 'Choisir une catégorie…';
-      rankCatSel.appendChild(placeholder);
-      let restored = false;
-      for (const key of sorted) {
-        const opt = document.createElement('option');
-        opt.value = key;
-        opt.textContent = classLabel(key);
-        if (prevKey && key === prevKey) { opt.selected = true; restored = true; }
-        rankCatSel.appendChild(opt);
-      }
-      if (!restored) placeholder.selected = true;
+  // Libellé affiché : « Nom complet (CODE) » — l'identité (tri, agrégation, URL) reste le code exact.
+  function catDisplayName(code) {
+    const e = catList.find(x => x.code === code);
+    const name = e && e.name ? e.name : code;
+    return name === code ? code : `${name} (${code})`;
+  }
+
+  // Premières organisations d'une catégorie (+ « N autres » si trop long).
+  function catOrgsText(code, limit) {
+    const e = catList.find(x => x.code === code);
+    const orgs = e ? e.orgs : [];
+    const max = limit || 6;
+    const head = orgs.slice(0, max);
+    if (orgs.length <= max) return head.join(', ');
+    const extra = orgs.length - head.length;
+    return head.join(', ') + `, +${extra} autre${extra > 1 ? 's' : ''}`;
+  }
+
+  // Version HTML de la sous-ligne orgas : l'orga filtrée (si actif) est mise en évidence.
+  function catOrgsTextHtml(code, limit, hl) {
+    const e = catList.find(x => x.code === code);
+    const orgs = e ? e.orgs : [];
+    const max = limit || 6;
+    const head = orgs.slice(0, max);
+    const parts = head.map(o => (o === hl ? `<strong class="cat-org-hl">${escape(o)}</strong>` : escape(o)));
+    let s = parts.join(', ');
+    if (orgs.length > max) {
+      const extra = orgs.length - head.length;
+      s += `, +${extra} autre${extra > 1 ? 's' : ''}`;
     }
+    return s;
+  }
+
+  function renderCatSelectorList(filter) {
+    const q = norm(filter || '');
+    const frag = document.createDocumentFragment();
+    let shown = 0;
+    for (const e of catList) {
+      if (currentOrgFilter && !e.orgs.includes(currentOrgFilter)) continue;
+      if (q && !norm((e.name || '') + ' ' + e.code + ' ' + e.orgs.join(' ')).includes(q)) continue;
+      shown++;
+      const sel = e.code === currentCatCode;
+      const opt = document.createElement('button');
+      opt.type = 'button';
+      opt.className = 'cat-selector-option' + (sel ? ' selected' : '');
+      opt.setAttribute('role', 'option');
+      opt.setAttribute('aria-selected', String(sel));
+      opt.dataset.code = e.code;
+      const n = e.orgs.length;
+      opt.innerHTML =
+        `<span class="cat-selector-name"><span class="cat-fullname">${escape(e.name || e.code)}</span>${e.name ? ` <span class="cat-code">(${escape(e.code)})</span>` : ''} <span class="cat-count">${n} orga${n > 1 ? 's' : ''}</span></span>` +
+        (n > 0
+          ? `<span class="cat-selector-orgas">${currentOrgFilter ? catOrgsTextHtml(e.code, 6, currentOrgFilter) : escape(catOrgsText(e.code))}</span>`
+          : '<span class="cat-selector-orgas" style="font-style:italic">Aucune organisation enregistrée</span>');
+      opt.addEventListener('click', () => selectCat(e.code));
+      frag.appendChild(opt);
+    }
+    catSelectorList.innerHTML = '';
+    catSelectorList.appendChild(frag);
+    catSelectorEmpty.hidden = shown > 0;
+    catSelectorEmpty.textContent = currentOrgFilter
+      ? 'Aucune catégorie pour cette organisation.'
+      : 'Aucune catégorie trouvée.';
+  }
+
+  // --- Cat selector panel ---
+  function openCatSelector() {
+    // On efface d'abord les filtres PUIS on rend la liste — sinon l'ancien
+    // filtre orga restait affiché malgré le <select> remis sur « Toutes ».
+    catSelectorFilter.value = '';
+    catOrgSel.value = '';
+    currentOrgFilter = '';
+    renderCatSelectorList('');
+    catSelectorPanel.hidden = false;
+    catSelectorSummary.setAttribute('aria-expanded', 'true');
+    catSelectorFilter.focus();
+  }
+  function closeCatSelector() {
+    catSelectorPanel.hidden = true;
+    catSelectorSummary.setAttribute('aria-expanded', 'false');
+  }
+  catSelectorSummary.addEventListener('click', () => {
+    if (catSelectorPanel.hidden) openCatSelector();
+    else closeCatSelector();
+  });
+  catSelectorSummary.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); catSelectorSummary.click(); }
+  });
+  catSelectorFilter.addEventListener('input', () => renderCatSelectorList(catSelectorFilter.value));
+  catOrgSel.addEventListener('change', () => {
+    currentOrgFilter = catOrgSel.value;
+    renderCatSelectorList(catSelectorFilter.value);
+  });
+  catSelectorReset.addEventListener('click', () => {
+    catOrgSel.value = '';
+    currentOrgFilter = '';
+    catSelectorFilter.value = '';
+    renderCatSelectorList('');
+    catSelectorFilter.focus();
+  });
+  catSelectorFilter.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeCatSelector();
+  });
+  document.addEventListener('click', e => {
+    if (!catSelectorPanel.hidden && !catSelectorPanel.contains(e.target) && !catSelectorSummary.contains(e.target)) {
+      closeCatSelector();
+    }
+  });
+
+  function selectCat(code) {
+    currentCatCode = code;
+    catSelectorValue.textContent = catDisplayName(code);
+    closeCatSelector();
+    renderCatSelectorList('');
     updateRankBtnEnabled();
+    replaceUrlState();
+    if (currentRows.length > 0) debouncedSearch();
   }
 
   function updateRankBtnEnabled() {
-    rankBtn.disabled = !globalDataReady || !rankCatSel.value;
+    rankBtn.disabled = !globalDataReady || !currentCatCode;
   }
 
   // --- Debounced search ---
@@ -991,10 +965,16 @@
     _searchTimer = setTimeout(searchRanking, 150);
   }
 
-  rankCatSel.addEventListener('change', updateRankBtnEnabled);
   rankYearSel.addEventListener('change', () => {
     replaceUrlState();
-    updateRankingForm();
+    buildCatList();
+    // La catégorie choisie n'existe peut-être pas pour la nouvelle année.
+    if (currentCatCode && !catList.some(e => e.code === currentCatCode)) {
+      currentCatCode = '';
+      catSelectorValue.textContent = 'Choisir une catégorie…';
+    }
+    renderCatSelectorList('');
+    updateRankBtnEnabled();
     if (currentRows.length > 0) debouncedSearch();
   });
 
@@ -1070,34 +1050,161 @@
     return s;
   }
 
+  // --- Indice de performance (même formule que sqorz_stats, spec 2026-09-02) ---
+  // Score d'un engagement sur 0–1000 : rang selon le nombre de partants × constance,
+  // blend chrono transpondeur, pénalité DNF graduée par la phase la plus profonde atteinte.
+  const PERF_DNF_SCORES = { final: 700, semi: 550, quarter: 400, moto: 250 };
+  const PERF_CHRONO_W = 0.3; // poids du composant chrono dans le blend (§4.3)
+  const perfClamp = v => Math.max(5, Math.min(1000, v));
+  const perfYearOf = d => (d || '').slice(0, 4) || '????';
+  // Phase DNF/DNS/DSQ (result ≥ 100000) : temps non valable, jamais dans le calcul chrono.
+  const isNotTimedPhase = d => d == null || d.result == null || Number(d.result) >= 100000;
+  const num = s => { const n = parseFloat(s); return isFinite(n) && n > 0 ? n : null; }; // temps > 0 requis
+
+  function zScore(rank, total) {
+    if (!total || total < 2 || typeof rank !== 'number') return null;
+    const mu = (total + 1) / 2;
+    const sigma = Math.sqrt((total * total - 1) / 12);
+    if (!sigma) return null;
+    return (mu - rank) / sigma;
+  }
+  // Score de rang : 500 + 500·z/√3 — 1ᵉʳ d'un gros champ ≈ 1000, médiane ≈ 500, dernier ≈ 5 (§4.1)
+  function perfScoreRang(rank, total) {
+    const z = zScore(rank, total);
+    return z == null ? null : perfClamp(500 + 500 * z / Math.sqrt(3));
+  }
+  // Meilleur temps valable du pilote (phases DNF/DNS/DSQ et temps ≤ 0 exclus)
+  function perfBestTime(details) {
+    let b = null;
+    for (const d of details || []) {
+      if (isNotTimedPhase(d)) continue;
+      const v = num(d.time);
+      if (v != null && (b == null || v < b)) b = v;
+    }
+    return b;
+  }
+  // Composant chrono : z-score sur log(temps) des pilotes chronométrés de la classe → centré
+  // sur 500, strict (peut baisser le score), classe < 3 chronométrés → null (§4.3)
+  function perfChronoScore(allBests, pilotBest) {
+    if (pilotBest == null || !allBests || allBests.length < 3) return null;
+    const logs = allBests.map(Math.log);
+    const mu = logs.reduce((a, b) => a + b, 0) / logs.length;
+    const sd = Math.sqrt(logs.reduce((a, b) => a + (b - mu) * (b - mu), 0) / logs.length) || 1;
+    if (!sd) return null;
+    return perfClamp(500 + 500 * (mu - Math.log(pilotBest)) / sd / Math.sqrt(3));
+  }
+  // Constance : ½·(% manches top 4) + ½·(finale atteinte) ; « finale atteinte » = phase finale
+  // valide OU rang final classé (proxy compétitions sans phases knock-out publiées) (§4.2)
+  function perfConstance(details, rank) {
+    let validMotos = 0, top4 = 0;
+    for (const d of details || []) {
+      if (!isMotoPhase(d)) continue;
+      if (typeof d.result === 'number' && d.result < 100000) { validMotos++; if (d.result <= 4) top4++; }
+    }
+    const pctTop4 = validMotos ? top4 / validMotos : 0.5;
+    let finaleOk = false;
+    for (const d of details || []) {
+      if (isFinalPhase(d) && typeof d.result === 'number' && d.result < 100000) { finaleOk = true; break; }
+    }
+    if (!finaleOk && typeof rank === 'number' && rank < 100000) finaleOk = true;
+    return 0.5 * pctTop4 + 0.5 * (finaleOk ? 1 : 0.4);
+  }
+  const perfCoefConstance = c => 0.9 + 0.2 * c; // ∈ [0.94, 1.1]
+
+  // Phase la plus profonde ATTEINTE par un non-classé (sa progression, pas le lieu de
+  // l'abandon — un DNF en manche n'est pas éliminatoire) → pénalité DNF (§4.4)
+  function perfDeepestPhase(details) {
+    const order = { final: 3, semi: 2, quarter: 1, moto: 0 };
+    let depth = 'moto';
+    for (const d of details || []) {
+      const n = d.phaseName || '';
+      const t = isFinalPhase(d) ? 'final'
+        : /semi|demi/i.test(n) ? 'semi'
+        : /quart|quarter|1\/4/i.test(n) ? 'quarter'
+        : 'moto';
+      if (order[t] > order[depth]) depth = t;
+    }
+    return depth;
+  }
+
+  // Retrouve la classe complète (tous les compétiteurs) dans l'index en mémoire, pour
+  // classer le pilote parmi les chronométrés de la classe à cette épreuve. Mémoïsé par classe.
+  const _chronoClassCache = new Map();
+  function findClassCompetitors(m) {
+    const key = `${m.account.accountCode}/${m.event.eventId}/${m.cls?.perpetualClassCode || m.cls?.className || ''}`;
+    if (_chronoClassCache.has(key)) return _chronoClassCache.get(key);
+    let out = null;
+    for (const ev of (pilotsIndex && pilotsIndex.events) || []) {
+      if (ev.account.accountCode !== m.account.accountCode) continue;
+      if (ev.event.eventId !== m.event.eventId) continue;
+      for (const cl of ev.classes) {
+        if (m.cls?.perpetualClassCode && cl.perpetualClassCode === m.cls.perpetualClassCode) { out = cl.competitors; break; }
+        if (!m.cls?.perpetualClassCode && cl.className === m.cls?.className) { out = cl.competitors; break; }
+      }
+      break; // événement trouvé
+    }
+    _chronoClassCache.set(key, out);
+    if (_chronoClassCache.size > 500) _chronoClassCache.clear(); // garde-fou mémoire
+    return out;
+  }
+
+  // Score d'un engagement événement → { raw (0–1000, avant clamp), year }
+  function perfEngagement(m) {
+    const c = m.competitor || {};
+    const year = perfYearOf(m.event.eventDate || m.event.eventEndDate);
+    const rk = c.rank;
+    if (typeof rk !== 'number' || rk >= 100000) { // §4.4 : pénalité graduée par phase la plus profonde atteinte
+      const depth = perfDeepestPhase(c.competitorRankDetails);
+      return { raw: PERF_DNF_SCORES[depth] ?? PERF_DNF_SCORES.moto, year };
+    }
+    const sr = perfScoreRang(rk, m.totalParticipants) ?? 250;
+    const cc = perfCoefConstance(perfConstance(c.competitorRankDetails, rk));
+    // Composant chrono (strict) : besoin des meilleurs temps de LA classe à CETTE épreuve
+    let chrono = null;
+    const comps = findClassCompetitors(m);
+    if (comps) {
+      const allBests = [];
+      for (const cp of comps) { const bt = perfBestTime(cp.competitorRankDetails); if (bt != null) allBests.push(bt); }
+      const pb = perfBestTime(c.competitorRankDetails);
+      if (allBests.length >= 3) chrono = perfChronoScore(allBests, pb);
+    }
+    const raw = chrono == null
+      ? sr * cc
+      : (sr * cc + PERF_CHRONO_W * chrono) / (1 + PERF_CHRONO_W); // blend renormalisé (§4.3)
+    return { raw, year };
+  }
+
+  // Indice d'un pilote = moyenne des indices annuels (comme sqorz_stats : une saison
+  // chargée ne pèse pas plus qu'une autre). Ici coef de niveau = 1 (toutes orgas confondues).
+  function computePerfIndex(matches) {
+    const byYear = new Map();
+    for (const m of matches) {
+      const e = perfEngagement(m);
+      let a = byYear.get(e.year);
+      if (!a) { a = { scores: 0, n: 0 }; byYear.set(e.year, a); }
+      a.scores += perfClamp(e.raw);
+      a.n++;
+    }
+    const years = [...byYear.keys()].filter(y => y !== '????').sort((a, b) => b.localeCompare(a));
+    if (!years.length) return null;
+    const means = years.map(y => Math.round(byYear.get(y).scores / byYear.get(y).n));
+    return Math.round(means.reduce((s, v) => s + v, 0) / means.length);
+  }
+
   // --- Main search ---
   function searchRanking() {
     const year = rankYearSel.value;
-    const selectedKey = rankCatSel.value;
-    if (!selectedKey) { setStatus('Choisir une catégorie.', true); return; }
-    if (selectedCodes.size === 0) {
-      setStatus('');
-      resultsEl.innerHTML = `<div class="card"><div class="empty-state">Aucune organisation sélectionnée — choisissez au moins une organisation pour afficher les résultats.</div></div>`;
-      currentRows = [];
-      return;
-    }
-    currentClassName = classLabel(selectedKey);
+    if (!currentCatCode) { setStatus('Choisir une catégorie.', true); return; }
     currentYearFilter = 'all';
 
-    // Résoudre le groupe ou le code individuel
-    const grp = CLASS_GROUPS.find(g => g.key === selectedKey);
-    const matchCode = grp
-      ? (code => grp.codes.has(code))
-      : (code => code === selectedKey);
-
+    // On agrège toutes les organisations qui courent cette classe Sqorz exacte.
     const pilotMap = new Map(); // normKey → {firstName, lastName, seenEvents: Set, matches[]}
     const eventIds = new Set();
 
     for (const { account, event, classes } of (pilotsIndex.events || [])) {
-      if (!selectedCodes.has(account.accountCode)) continue;
       if (year && !(event.eventDate || '').startsWith(year + '-')) continue;
       for (const cls of (classes || [])) {
-        if (!matchCode(cls.perpetualClassCode)) continue;
+        if (cls.perpetualClassCode !== currentCatCode) continue;
         eventIds.add(event.eventId);
         const competitors = cls.competitors || [];
         for (const c of competitors) {
@@ -1111,7 +1218,7 @@
           pilot.seenEvents.add(event.eventId);
           pilot.matches.push({
             account, event,
-            cls: { className: cls.className },
+            cls: { className: cls.className, perpetualClassCode: cls.perpetualClassCode },
             competitor: c,
             totalParticipants: cls.total || competitors.length,
           });
@@ -1121,7 +1228,7 @@
 
     currentEventCount = eventIds.size;
 
-    const label = classLabel(selectedKey);
+    const label = catDisplayName(currentCatCode);
     if (pilotMap.size === 0) {
       const yearMsg = year ? ` en ${year}` : '';
       setStatus(`Aucun pilote trouvé dans la catégorie « ${label} »${yearMsg}.`);
@@ -1140,6 +1247,7 @@
         name: (pilot.firstName + ' ' + pilot.lastName).trim(),
         stats,
         matches: pilot.matches,
+        perfIndex: computePerfIndex(pilot.matches),
       });
     }
 
@@ -1184,7 +1292,7 @@
   }
 
   // --- Render table ---
-  const isUCat = () => /^U(7|9|11|13|15)\b/i.test(currentClassName);
+  const isUCat = () => isYouthParityCode(currentCatCode);
 
   function buildCols() {
     const cols = [
@@ -1203,6 +1311,7 @@
       { key: 'qualifRate',    label: '% Qualif.',       full: '% Qualifications',    sortable: true },
       { key: 'finaleRate',    label: '% Finale',        full: '% Finales',           sortable: true },
       { key: 'mancheTop4Rate',label: '% Mch.T4',        full: '% Manches Top 4',     sortable: true },
+      { key: 'perfIndex',     label: '🏅 Indice',       full: 'Indice de performance', sortable: true },
     );
     return cols;
   }
@@ -1223,6 +1332,7 @@
       case 'qualifRate':      return s.entries ? s.qualifReached / s.entries : 0;
       case 'finaleRate':      return s.entries ? s.finalsReached / s.entries : 0;
       case 'mancheTop4Rate':  return s.manchesRaced ? s.mancheTop4 / s.manchesRaced : 0;
+      case 'perfIndex':       return row.perfIndex ?? null;
       default:                return null;
     }
   }
@@ -1291,6 +1401,7 @@
         <td>${qualifRate}</td>
         <td>${finaleRate}</td>
         <td>${mancheTop4Rate}</td>
+        <td title="Indice de performance (0–1000)">${row.perfIndex != null ? row.perfIndex : '—'}</td>
       </tr>`;
     }).join('');
 
@@ -1437,7 +1548,7 @@
 
   // --- Search button ---
   rankBtn.addEventListener('click', () => {
-    orgPanel.hidden = true;
+    closeCatSelector();
     searchRanking();
   });
 

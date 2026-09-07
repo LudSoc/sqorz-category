@@ -12,11 +12,12 @@ Browse BMX Race rankings and statistics by age category across multiple organiza
 
 ### Features
 
-- Filter by age category (e.g. Élite, 7 ans, Cruiser…)
-- Multi-organization selection for regional or national views
+- Category list without grouping: each exact Sqorz class (e.g. `U9GR`, `9GR`, `Élite`…) is its own entry
+- Each category shows the organizations running that exact class
+- Selecting a category ranks pilots across all those organizations
 - Year filter
 - Top pilots per category with podium counts
-- Shareable URL (saves selected organizations and year)
+- Shareable URL (saves selected category and year)
 
 ### Live
 
@@ -36,11 +37,13 @@ Consultez les classements et statistiques BMX Race par catégorie d'âge, sur pl
 
 ### Fonctionnalités
 
-- Filtre par catégorie d'âge (Élite, 7 ans, Cruiser…)
-- Sélection multi-organisations pour une vue régionale ou nationale
+- Liste de catégories sans regroupement : chaque classe Sqorz exacte (ex. `U9GR`, `9GR`, Élite…) a sa propre entrée
+- Chaque catégorie affiche les organisations qui courent cette classe exacte
+- Choisir une catégorie classe les pilotes de toutes ces organisations
 - Filtre par année
 - Meilleurs pilotes par catégorie avec leur nombre de podiums
-- URL partageable (mémorise les organisations et l'année sélectionnées)
+- Indice de performance par pilote (0–1000, même formule que sqorz_stats : rang selon le nombre de partants, constance, chrono transpondeur, DNF gradué par la phase atteinte)
+- URL partageable (mémorise la catégorie et l'année sélectionnées)
 
 ### Accès
 
