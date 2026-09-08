@@ -265,8 +265,13 @@
   .pilot-search-input::placeholder{color:var(--muted)}
   .pilot-search-clear{border:none; background:none; cursor:pointer; color:var(--muted); font-size:14px; padding:0; line-height:1; display:none; min-width:36px; min-height:36px}
   .pilot-search-clear.visible{display:block}
+  .pilot-search-count{font-size:12px; color:var(--muted); white-space:nowrap; font-variant-numeric:tabular-nums}
+  .pilot-search-nav{border:none; background:none; cursor:pointer; color:var(--muted); font-size:17px; font-weight:700; padding:0 2px; line-height:1; min-width:36px; min-height:36px}
+  .pilot-search-nav:hover{color:var(--ink)}
+  .pilot-search-empty{flex:1 1 100%; font-size:12px; color:var(--muted)}
   tr.row-hidden{display:none}
   tr.row-highlight td:nth-child(2){background:rgba(59,130,246,.08)}
+  tr.row-current td:nth-child(2){background:rgba(59,130,246,.18); box-shadow:inset 3px 0 0 var(--accent)}
 
   /* Year filter */
   .year-filter{display:flex; gap:5px}
@@ -752,6 +757,21 @@
   let currentYearFilter = 'all';
   let currentEventCount = 0;
   let currentMobileStat = 4; // index 1-based, 4 = Victoires par défaut
+  let pilotSearchQuery = ''; // saisie conservée entre les rendus (tri, parité…)
+  let pilotSearchPos = 0;    // position dans les matchs (navigation Entrée/‹ ›)
+
+  // Tous les mots doivent être présents, dans n'importe quel ordre
+  // (ex. « dupont jean » trouve « Jean Dupont »). Testé.
+  function matchTokens(key, query) {
+    const tokens = norm(query).split(' ').filter(Boolean);
+    if (!tokens.length) return false;
+    return tokens.every(t => (key || '').includes(t));
+  }
+  // Position circulaire dans les matchs (navigation). Testé.
+  function wrapSearchPos(pos, n) {
+    if (!n) return 0;
+    return ((pos % n) + n) % n;
+  }
 
   // --- Status ---
   function setStatus(msg, isError = false) {
@@ -1091,6 +1111,8 @@
     const year = rankYearSel.value;
     if (!currentCatCode) { setStatus('Choisir une catégorie.', true); return; }
     currentYearFilter = 'all';
+    pilotSearchQuery = ''; // nouveau contexte (catégorie/année) : recherche réinitialisée
+    pilotSearchPos = 0;
 
     // On agrège toutes les organisations qui courent cette classe exacte
     // (FR + UEC namespacée `uec:…`).
@@ -1314,9 +1336,13 @@
         ${renderCategoryStats(rows)}
         <div class="pilot-search-wrap">
           <span class="pilot-search-icon" aria-hidden="true">🔍</span>
-          <input class="pilot-search-input" id="pilotSearchInput" type="search" placeholder="Rechercher un pilote…" autocomplete="off">
+          <input class="pilot-search-input" id="pilotSearchInput" type="search" placeholder="Rechercher un pilote…" autocomplete="off" title="Entrée : match suivant, Maj+Entrée : précédent">
+          <span class="pilot-search-count" id="pilotSearchCount" hidden></span>
+          <button class="pilot-search-nav" id="pilotSearchPrev" title="Match précédent (Maj+Entrée)" aria-label="Match précédent" hidden>‹</button>
+          <button class="pilot-search-nav" id="pilotSearchNext" title="Match suivant (Entrée)" aria-label="Match suivant" hidden>›</button>
           <button class="pilot-search-clear" id="pilotSearchClear" title="Effacer">✕</button>
         </div>
+        <div class="pilot-search-empty" id="pilotSearchEmpty" hidden></div>
         ${yearFilterHtml}
       </div>
       <div class="mobile-stat-sel-wrap card">
@@ -1385,22 +1411,9 @@
     const rowKeyMap = new Map(sorted.map(r => [r.key, r]));
     resultsEl.querySelectorAll('.pilot-row').forEach(tr => {
       tr.addEventListener('click', e => {
-        const searchActive = document.getElementById('pilotSearchInput')?.value.trim().length > 0;
-        if (searchActive) {
-          // Effacer la recherche et scroller jusqu'à la ligne
-          const si = document.getElementById('pilotSearchInput');
-          si.value = '';
-          document.getElementById('pilotSearchClear')?.classList.remove('visible');
-          resultsEl.querySelectorAll('.ranking-table tbody tr').forEach(r => {
-            r.classList.remove('row-hidden', 'row-highlight');
-          });
-          tr.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          tr.classList.add('row-highlight');
-          setTimeout(() => tr.classList.remove('row-highlight'), 2000);
-        } else {
-          const row = rowKeyMap.get(tr.dataset.key);
-          if (row) openPilotDetail(row);
-        }
+        // La recherche est conservée : le clic ouvre toujours la fiche pilote.
+        const row = rowKeyMap.get(tr.dataset.key);
+        if (row) openPilotDetail(row);
       });
     });
 
@@ -1428,20 +1441,63 @@
       });
     });
 
-    // Pilot search (live filter)
+    // Pilot search : filtre par tokens sur la clé normalisée de la ligne,
+    // saisie conservée entre les rendus, compteur + navigation entre les matchs.
     const searchInput = document.getElementById('pilotSearchInput');
     const searchClear = document.getElementById('pilotSearchClear');
-    const filterRows = () => {
-      const q = norm(searchInput.value);
-      searchClear.classList.toggle('visible', q.length > 0);
-      resultsEl.querySelectorAll('.ranking-table tbody tr').forEach(tr => {
-        const name = norm(tr.querySelector('td:nth-child(2)')?.textContent || '');
-        tr.classList.toggle('row-hidden', q.length > 0 && !name.includes(q));
-        tr.classList.toggle('row-highlight', q.length > 0 && name.includes(q));
+    const searchCount = document.getElementById('pilotSearchCount');
+    const searchPrev = document.getElementById('pilotSearchPrev');
+    const searchNext = document.getElementById('pilotSearchNext');
+    const searchEmpty = document.getElementById('pilotSearchEmpty');
+    const filterRows = (scrollToCurrent = false) => {
+      const tokens = norm(searchInput.value).split(' ').filter(Boolean);
+      pilotSearchQuery = searchInput.value;
+      const rows = [...resultsEl.querySelectorAll('.ranking-table tbody tr')];
+      const matched = rows.filter(tr => {
+        const ok = tokens.length > 0 && tokens.every(t => (tr.dataset.key || '').includes(t));
+        tr.classList.toggle('row-hidden', tokens.length > 0 && !ok);
+        tr.classList.toggle('row-highlight', ok);
+        tr.classList.remove('row-current');
+        return ok;
       });
+      pilotSearchPos = wrapSearchPos(pilotSearchPos, matched.length);
+      const current = matched[pilotSearchPos];
+      if (current) {
+        current.classList.add('row-current');
+        if (scrollToCurrent) current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      const active = tokens.length > 0;
+      searchCount.hidden = !active;
+      searchCount.textContent = active ? `${matched.length ? pilotSearchPos + 1 : 0}/${matched.length}` : '';
+      const showNav = active && matched.length > 1;
+      searchPrev.hidden = !showNav;
+      searchNext.hidden = !showNav;
+      searchClear.classList.toggle('visible', active);
+      searchEmpty.hidden = !(active && matched.length === 0);
+      if (active && matched.length === 0) {
+        searchEmpty.textContent = `Aucun pilote trouvé pour « ${searchInput.value.trim()} ».`;
+      }
     };
-    searchInput.addEventListener('input', filterRows);
-    searchClear.addEventListener('click', () => { searchInput.value = ''; filterRows(); searchInput.focus(); });
+    const stepSearch = dir => {
+      pilotSearchPos += dir;
+      filterRows(true);
+    };
+    searchInput.addEventListener('input', () => { pilotSearchPos = 0; filterRows(); });
+    searchInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); stepSearch(e.shiftKey ? -1 : 1); }
+    });
+    searchPrev.addEventListener('click', () => stepSearch(-1));
+    searchNext.addEventListener('click', () => stepSearch(1));
+    searchClear.addEventListener('click', () => {
+      pilotSearchQuery = '';
+      pilotSearchPos = 0;
+      searchInput.value = '';
+      filterRows();
+      searchInput.focus();
+    });
+    // Restaure la saisie après re-rendu (tri, parité…) sans scroller.
+    searchInput.value = pilotSearchQuery;
+    filterRows();
   }
 
   // --- Search button ---
