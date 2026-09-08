@@ -13,6 +13,7 @@ Browse BMX Race rankings and statistics by age category across multiple organiza
 ### Features
 
 - Category list without grouping: each exact Sqorz class (e.g. `U9GR`, `9GR`, `Élite`…) is its own entry
+- European (UEC) classes included as separate `uec:…` entries (e.g. `uec:B11`)
 - Each category shows the organizations running that exact class
 - Selecting a category ranks pilots across all those organizations
 - Year filter
@@ -25,7 +26,7 @@ Browse BMX Race rankings and statistics by age category across multiple organiza
 
 ### Tech
 
-Single-file HTML/CSS/JS, no framework, no build step. Data from the public [Sqorz API](https://our.sqorz.com).
+Single-file HTML/CSS/JS, no framework, no build step. Data from the public [Sqorz API](https://our.sqorz.com) + UEC European races (JSTiming).
 
 > Community project, not affiliated with Sqorz.
 
@@ -38,6 +39,7 @@ Consultez les classements et statistiques BMX Race par catégorie d'âge, sur pl
 ### Fonctionnalités
 
 - Liste de catégories sans regroupement : chaque classe Sqorz exacte (ex. `U9GR`, `9GR`, Élite…) a sa propre entrée
+- Catégories européennes (UEC) incluses comme entrées `uec:…` séparées (ex. `uec:B11`)
 - Chaque catégorie affiche les organisations qui courent cette classe exacte
 - Choisir une catégorie classe les pilotes de toutes ces organisations
 - Filtre par année
@@ -51,6 +53,6 @@ Consultez les classements et statistiques BMX Race par catégorie d'âge, sur pl
 
 ### Technique
 
-HTML/CSS/JS en fichier unique, sans framework, sans étape de build. Données issues de l'[API publique Sqorz](https://our.sqorz.com).
+HTML/CSS/JS en fichier unique, sans framework, sans étape de build. Données issues de l'[API publique Sqorz](https://our.sqorz.com) + courses européennes UEC (JSTiming).
 
 > Projet communautaire non officiel, non affilié à Sqorz.
