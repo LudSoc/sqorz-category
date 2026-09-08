@@ -44,7 +44,7 @@ Consultez les classements et statistiques BMX Race par catégorie d'âge, sur pl
 - Choisir une catégorie classe les pilotes de toutes ces organisations
 - Filtre par année
 - Meilleurs pilotes par catégorie avec leur nombre de podiums
-- Indice de performance par pilote (0–1000, même formule que sqorz_stats : rang selon le nombre de partants, constance, chrono transpondeur, DNF gradué par la phase atteinte)
+- Indice de performance par pilote (0–1000, même formule que sqorz_stats : rang selon le nombre de partants, force du plateau adverse, constance, chrono transpondeur, DNF gradué par la phase atteinte)
 - URL partageable (mémorise la catégorie et l'année sélectionnées)
 
 ### Accès

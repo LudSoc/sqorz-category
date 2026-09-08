@@ -526,9 +526,9 @@
   const {
     norm, escape, humanError, zScore,
     isFinalPhase, isMotoPhase, isNotTimedPhase, num, perfHasKnockout,
-    expandIndex, loadIndexCached,
+    expandIndex, loadIndexCached, loadFieldStrength,
     PERF_DNF_SCORES, perfClamp, perfScoreRang, perfBestTime, perfChronoScore,
-    perfConstance, perfCoefConstance, perfDeepestPhase,
+    perfConstance, perfCoefConstance, perfDeepestPhase, perfShrinkMean, applyFieldScore,
     formatDataDates,
   } = window.SqorzCommon;
   const INDEX_SOURCES = [
@@ -560,6 +560,11 @@
   // --- State ---
   let pilotsIndex = null;
   let uecIndex = null;   // index UEC expansé (optionnel — l'app fonctionne sans)
+  let perfFrField = null;  // { classes, medFs } — forces de plateau FR (indice v2, optionnel)
+  let perfUecField = null; // idem UEC — silent fallback v1 si absents
+  // Clé de classe = même convention que findClassCompetitors et le build (build-field.js).
+  const fieldKeyOfEvent = m => `${m.account.accountCode}/${m.event.eventId}/${m.cls?.perpetualClassCode || m.cls?.className || ''}`;
+  const fieldCtxFor = m => (m.account && m.account.accountCode === 'uec') ? perfUecField : perfFrField;
   let currentCatCode = ''; // code exact de la catégorie sélectionnée (`uec:…` pour l'UEC)
   let catList = [];        // [{ code, orgs:[…] }] pour l'année sélectionnée
   let orgList = [];        // orgas de l'année (filtre de la liste des catégories)
@@ -696,7 +701,6 @@
     } catch (e) {
       console.warn('[category] uec-index.json indisponible :', e && e.message);
       uecIndex = null;
-      return;
     }
     showDataDates();
     // La liste gagne les entrées `uec:…` (les codes FR sont inchangés → la
@@ -714,6 +718,30 @@
     }
     if (currentCatCode) {
       searchRanking();
+    }
+    loadFieldsInBackground();
+  }
+
+  // Forces de plateau (indice v2, optionnel) : relance le classement affiché si chargées.
+  async function loadFieldsInBackground() {
+    const [frF, uecF] = await Promise.all([
+      loadFieldStrength({
+        metaUrl: 'https://ludsoc.github.io/sqorz-stats/field-strength-fr.meta.json',
+        url: 'https://pub-7af06f138c97425f8062b881846803cb.r2.dev/field-strength-fr.json',
+        cacheKey: 'https://sqorz.local/cache/field-strength-fr.json',
+        tag: '[category:fs-fr]',
+      }),
+      loadFieldStrength({
+        metaUrl: 'https://ludsoc.github.io/sqorz-stats/field-strength-uec.meta.json',
+        url: 'https://pub-7af06f138c97425f8062b881846803cb.r2.dev/field-strength-uec.json',
+        cacheKey: 'https://sqorz.local/cache/field-strength-uec.json',
+        tag: '[category:fs-uec]',
+      }),
+    ]);
+    if (frF || uecF) {
+      perfFrField = frF;
+      perfUecField = uecF;
+      if (currentRows.length) searchRanking();
     }
   }
   retryBtn.onclick = loadIndex;
@@ -1078,7 +1106,7 @@
     const rk = c.rank;
     if (typeof rk !== 'number' || rk >= 100000) { // §4.4 : pénalité graduée par phase la plus profonde atteinte
       const depth = perfDeepestPhase(c.competitorRankDetails);
-      return { raw: PERF_DNF_SCORES[depth] ?? PERF_DNF_SCORES.moto, year };
+      return { raw: PERF_DNF_SCORES[depth] ?? PERF_DNF_SCORES.moto, nDnf: 1, year };
     }
     const sr = perfScoreRang(rk, m.totalParticipants) ?? 250;
     const cc = perfCoefConstance(perfConstance(c.competitorRankDetails, rk));
@@ -1094,7 +1122,7 @@
     const raw = chrono == null
       ? sr * cc
       : (sr * cc + PERF_CHRONO_W * chrono) / (1 + PERF_CHRONO_W); // blend renormalisé (§4.3)
-    return { raw, year };
+    return { raw, nDnf: 0, year };
   }
 
   // Indice d'un pilote = moyenne des indices annuels (comme sqorz_stats : une saison
@@ -1105,12 +1133,12 @@
       const e = perfEngagement(m);
       let a = byYear.get(e.year);
       if (!a) { a = { scores: 0, n: 0 }; byYear.set(e.year, a); }
-      a.scores += perfClamp(e.raw);
+      a.scores += applyFieldScore(e.raw, 1, fieldKeyOfEvent(m), e.year, fieldCtxFor(m), e.nDnf);
       a.n++;
     }
     const years = [...byYear.keys()].filter(y => y !== '????').sort((a, b) => b.localeCompare(a));
     if (!years.length) return null;
-    const means = years.map(y => Math.round(byYear.get(y).scores / byYear.get(y).n));
+    const means = years.map(y => { const a = byYear.get(y); return perfShrinkMean(a.scores / a.n, a.n); });
     return Math.round(means.reduce((s, v) => s + v, 0) / means.length);
   }
 
