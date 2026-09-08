@@ -269,7 +269,6 @@
   .pilot-search-nav{border:none; background:none; cursor:pointer; color:var(--muted); font-size:17px; font-weight:700; padding:0 2px; line-height:1; min-width:36px; min-height:36px}
   .pilot-search-nav:hover{color:var(--ink)}
   .pilot-search-empty{flex:1 1 100%; font-size:12px; color:var(--muted)}
-  tr.row-hidden{display:none}
   tr.row-highlight td:nth-child(2){background:rgba(59,130,246,.08)}
   tr.row-current td:nth-child(2){background:rgba(59,130,246,.18); box-shadow:inset 3px 0 0 var(--accent)}
 
@@ -1450,32 +1449,43 @@
       });
     });
 
-    // Pilot search : filtre par tokens sur la clé normalisée de la ligne,
-    // saisie conservée entre les rendus, compteur + navigation entre les matchs.
+    // Pilot search : filtre par tokens sur la clé normalisée de la ligne.
+    // Les lignes non trouvées RESTENT visibles (tableau global : on voit la
+    // ligne à sa position) — seuls les matchs sont surlignés, le courant centré.
     const searchInput = document.getElementById('pilotSearchInput');
     const searchClear = document.getElementById('pilotSearchClear');
     const searchCount = document.getElementById('pilotSearchCount');
     const searchPrev = document.getElementById('pilotSearchPrev');
     const searchNext = document.getElementById('pilotSearchNext');
     const searchEmpty = document.getElementById('pilotSearchEmpty');
-    const filterRows = (scrollToCurrent = false) => {
+    const getMatchedRows = () => {
       const tokens = norm(searchInput.value).split(' ').filter(Boolean);
-      pilotSearchQuery = searchInput.value;
-      const rows = [...resultsEl.querySelectorAll('.ranking-table tbody tr')];
-      const matched = rows.filter(tr => {
-        const ok = tokens.length > 0 && tokens.every(t => (tr.dataset.key || '').includes(t));
-        tr.classList.toggle('row-hidden', tokens.length > 0 && !ok);
-        tr.classList.toggle('row-highlight', ok);
+      if (!tokens.length) return [];
+      return [...resultsEl.querySelectorAll('.ranking-table tbody tr')]
+        .filter(tr => tokens.every(t => (tr.dataset.key || '').includes(t)));
+    };
+    const scrollRowIntoView = tr => {
+      const scroller = tr.closest('.table-scroll');
+      if (scroller && scroller.scrollHeight > scroller.clientHeight + 4) {
+        scroller.scrollTo({ top: tr.offsetTop - scroller.clientHeight / 2 + tr.clientHeight / 2, behavior: 'smooth' });
+      } else {
+        tr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    };
+    const filterRows = (scrollToCurrent = false) => {
+      const matched = getMatchedRows();
+      const active = norm(searchInput.value).split(' ').filter(Boolean).length > 0;
+      resultsEl.querySelectorAll('.ranking-table tbody tr').forEach(tr => {
+        tr.classList.toggle('row-highlight', matched.includes(tr));
         tr.classList.remove('row-current');
-        return ok;
       });
+      pilotSearchQuery = searchInput.value;
       pilotSearchPos = wrapSearchPos(pilotSearchPos, matched.length);
       const current = matched[pilotSearchPos];
       if (current) {
         current.classList.add('row-current');
-        if (scrollToCurrent) current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (scrollToCurrent) scrollRowIntoView(current);
       }
-      const active = tokens.length > 0;
       searchCount.hidden = !active;
       searchCount.textContent = active ? `${matched.length ? pilotSearchPos + 1 : 0}/${matched.length}` : '';
       const showNav = active && matched.length > 1;
@@ -1488,7 +1498,7 @@
       }
     };
     const stepSearch = dir => {
-      const next = stepSearchState(pilotSearchCentered, pilotSearchPos, dir, document.querySelectorAll('.ranking-table tbody tr:not(.row-hidden)').length);
+      const next = stepSearchState(pilotSearchCentered, pilotSearchPos, dir, getMatchedRows().length);
       pilotSearchCentered = next.centered;
       pilotSearchPos = next.pos;
       filterRows(true);
