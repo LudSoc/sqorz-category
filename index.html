@@ -546,7 +546,8 @@
   // Une « catégorie » = le nom exact de la classe (Sqorz, ou UEC namespacée `uec:`).
   // Aucun regroupement : chaque code a sa propre entrée dans la liste, avec la
   // liste des organisations qui courent cette classe exacte.
-  // Catégorie de parité d'âge (bandes U7…U15) → filtre « 1ère / 2ème année ».
+  // Catégorie de parité d'âge (bandes U7…U15) → filtre « 1ère année (défavorable,
+  // plus jeunes) / 2ème année (favorable, plus âgés) ».
   function isYouthParityCode(code) {
     if (!code || code.includes('+')) return false;
     let m = /^U?(\d{1,2})(?:[A-Z][A-Z0-9]*|\.C|\.)?$/i.exec(code);
@@ -1212,8 +1213,8 @@
     const a = currentYearFilter;
     return `<div class="year-filter" role="tablist">
       <button class="yf-btn${a==='all'?' active':''}" data-yf="all" role="tab" aria-selected="${a==='all'}">Toutes</button>
-      <button class="yf-btn${a==='1'?' active':''}" data-yf="1" role="tab" aria-selected="${a==='1'}">1ère année</button>
-      <button class="yf-btn${a==='2'?' active':''}" data-yf="2" role="tab" aria-selected="${a==='2'}">2ème année</button>
+      <button class="yf-btn${a==='1'?' active':''}" data-yf="1" role="tab" aria-selected="${a==='1'}">1ère année (défavorable)</button>
+      <button class="yf-btn${a==='2'?' active':''}" data-yf="2" role="tab" aria-selected="${a==='2'}">2ème année (favorable)</button>
     </div>`;
   }
 
