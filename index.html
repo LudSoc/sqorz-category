@@ -1050,7 +1050,8 @@
     return s;
   }
 
-  // --- Indice de performance (même formule que sqorz_stats, spec 2026-09-02) ---
+  // --- Indice de performance (même formule que sqorz_stats, spec 2026-09-02,
+  // resserrée le 2026-09-08 : courbe convexe en haut + bonus réduits) ---
   // Score d'un engagement sur 0–1000 : rang selon le nombre de partants × constance,
   // blend chrono transpondeur, pénalité DNF graduée par la phase la plus profonde atteinte.
   const PERF_DNF_SCORES = { final: 700, semi: 550, quarter: 400, moto: 250 };
@@ -1068,10 +1069,14 @@
     if (!sigma) return null;
     return (mu - rank) / sigma;
   }
-  // Score de rang : 500 + 500·z/√3 — 1ᵉʳ d'un gros champ ≈ 1000, médiane ≈ 500, dernier ≈ 5 (§4.1)
+  // Score de rang : 500 + 500·(z/√3)^2,5 pour z > 0 (courbe convexe : un podium vaut
+  // nettement plus qu'une place en fond de top-20), linéaire sous la médiane (§4.1)
+  const PERF_RANG_EXP = 2.5;
   function perfScoreRang(rank, total) {
     const z = zScore(rank, total);
-    return z == null ? null : perfClamp(500 + 500 * z / Math.sqrt(3));
+    if (z == null) return null;
+    if (z <= 0) return perfClamp(500 + 500 * z / Math.sqrt(3));
+    return perfClamp(500 + 500 * Math.pow(Math.min(1, z / Math.sqrt(3)), PERF_RANG_EXP));
   }
   // Meilleur temps valable du pilote (phases DNF/DNS/DSQ et temps ≤ 0 exclus)
   function perfBestTime(details) {
@@ -1094,7 +1099,16 @@
     return perfClamp(500 + 500 * (mu - Math.log(pilotBest)) / sd / Math.sqrt(3));
   }
   // Constance : ½·(% manches top 4) + ½·(finale atteinte) ; « finale atteinte » = phase finale
-  // valide OU rang final classé (proxy compétitions sans phases knock-out publiées) (§4.2)
+  // valide OU rang final classé SANS phases à élimination directe publiées (proxy compétitions
+  // sans phases knock-out publiées) (§4.2). Un éliminé en demie (demies présentes, pas de
+  // finale) ne touche pas le bonus, même s'il est classé.
+  function perfHasKnockout(details) {
+    for (const d of details || []) {
+      const n = (d.phaseName || '').toLowerCase();
+      if (/semi|demi|quart|quarter|1\/8|1\/16|huitieme|seizieme/.test(n)) return true;
+    }
+    return false;
+  }
   function perfConstance(details, rank) {
     let validMotos = 0, top4 = 0;
     for (const d of details || []) {
@@ -1106,10 +1120,10 @@
     for (const d of details || []) {
       if (isFinalPhase(d) && typeof d.result === 'number' && d.result < 100000) { finaleOk = true; break; }
     }
-    if (!finaleOk && typeof rank === 'number' && rank < 100000) finaleOk = true;
+    if (!finaleOk && typeof rank === 'number' && rank < 100000 && !perfHasKnockout(details)) finaleOk = true;
     return 0.5 * pctTop4 + 0.5 * (finaleOk ? 1 : 0.4);
   }
-  const perfCoefConstance = c => 0.9 + 0.2 * c; // ∈ [0.94, 1.1]
+  const perfCoefConstance = c => 0.95 + 0.1 * c; // ∈ [0.97, 1.05]
 
   // Phase la plus profonde ATTEINTE par un non-classé (sa progression, pas le lieu de
   // l'abandon — un DNF en manche n'est pas éliminatoire) → pénalité DNF (§4.4)
