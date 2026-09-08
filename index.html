@@ -642,9 +642,31 @@
     }
   }
 
+  // Années présentes dans les données (FR + UEC), tri desc.
+  function dataYears() {
+    const set = new Set();
+    for (const { event } of allIndexedEvents()) {
+      const y = (event.eventDate || '').slice(0, 4);
+      if (/^\d{4}$/.test(y)) set.add(y);
+    }
+    return [...set].sort((a, b) => b.localeCompare(a));
+  }
+  // Pas de vue « toutes les années » : garde le choix s'il a des données
+  // (?year=…, choix utilisateur), sinon replie sur l'année la plus récente
+  // avec des données (si elle figure dans le sélecteur).
+  function snapYearToData() {
+    const years = dataYears();
+    const cur = rankYearSel.value;
+    if (cur && years.includes(cur)) return;
+    const available = new Set([...rankYearSel.options].map(o => o.value).filter(Boolean));
+    const fallback = years.find(y => available.has(y)) || '';
+    if (fallback) rankYearSel.value = fallback;
+  }
+
   function finishPrimaryLoad() {
     const urlState = parseUrlState();
     if (urlState.year) rankYearSel.value = urlState.year;
+    snapYearToData();
     buildCatList();
     if (urlState.cat && catList.some(e => e.code === urlState.cat)) {
       currentCatCode = urlState.cat;
@@ -1537,15 +1559,10 @@
   overlay.addEventListener('click', e => { if (e.target === overlay) closePilotDetail(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closePilotDetail(); });
 
-  // --- Year selector population ---
+  // --- Year selector population (années uniquement, pas de « toutes ») ---
   (() => {
     const currentYear = new Date().getFullYear();
     const frag = document.createDocumentFragment();
-    const allOpt = document.createElement('option');
-    allOpt.value = '';
-    allOpt.textContent = 'Toutes les années';
-    allOpt.selected = true;
-    frag.appendChild(allOpt);
     for (let y = currentYear; y >= 2023; y--) {
       const opt = document.createElement('option');
       opt.value = String(y);
