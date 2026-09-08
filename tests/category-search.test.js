@@ -18,8 +18,9 @@ function block(start, indent = '  ') {
 }
 const H = new Function('norm',
   block('function matchTokens(key, query) {') + '\n' +
-  block('function wrapSearchPos(pos, n) {') +
-  '\nreturn { matchTokens, wrapSearchPos };'
+  block('function wrapSearchPos(pos, n) {') + '\n' +
+  block('function stepSearchState(centered, pos, dir, n) {') +
+  '\nreturn { matchTokens, wrapSearchPos, stepSearchState };'
 )(SC.norm);
 
 test('matchTokens : tous les mots, ordre indifférent, accents', () => {
@@ -46,4 +47,13 @@ test('wrapSearchPos : circulaire dans les deux sens', () => {
   assert.equal(H.wrapSearchPos(7, 5), 2);
   assert.equal(H.wrapSearchPos(0, 0), 0);
   assert.equal(H.wrapSearchPos(3, 1), 0);
+});
+
+test('stepSearchState : Entrée centre d’abord, puis navigue', () => {
+  assert.deepEqual(H.stepSearchState(false, 0, 1, 5), { centered: true, pos: 0 });
+  assert.deepEqual(H.stepSearchState(false, 3, -1, 5), { centered: true, pos: 3 });
+  assert.deepEqual(H.stepSearchState(true, 0, 1, 5), { centered: true, pos: 1 });
+  assert.deepEqual(H.stepSearchState(true, 0, -1, 5), { centered: true, pos: 4 });
+  assert.deepEqual(H.stepSearchState(true, 4, 1, 5), { centered: true, pos: 0 });
+  assert.deepEqual(H.stepSearchState(false, 0, 1, 0), { centered: true, pos: 0 });
 });
