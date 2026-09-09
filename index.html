@@ -544,6 +544,7 @@
     PERF_DNF_SCORES, perfClamp, perfScoreRang, perfBestTime, perfChronoScore,
     perfConstance, perfCoefConstance, perfDeepestPhase, perfShrinkMean, applyFieldScore, perfWeight,
     renderDataDates, setTextStatus, setBarProgress,
+    UEC_SOURCE_NOTE,
   } = window.SqorzCommon;
   // --- Noms complets des clubs (clubs.json, cf. club_stats/tools/clubs/README.md) ---
   // Normalisation compatible club_stats (conserve '-' et la ponctuation : JOUE-T ≠ JOUE T).
@@ -1424,6 +1425,7 @@
     resultsEl.innerHTML = `
       <div class="card cat-stats-bar">
         ${renderCategoryStats(rows)}
+        ${currentCatCode.startsWith('uec:') && typeof UEC_SOURCE_NOTE === 'string' ? `<div style="font-size:11.5px;color:var(--muted);margin-top:8px">ⓘ ${escape(UEC_SOURCE_NOTE)}</div>` : ''}
         <div class="pilot-search-wrap">
           <span class="pilot-search-icon" aria-hidden="true">🔍</span>
           <input class="pilot-search-input" id="pilotSearchInput" type="search" placeholder="Rechercher un pilote…" autocomplete="off" title="Entrée : centrer sur le match, puis naviguer (Maj+Entrée : précédent)">
