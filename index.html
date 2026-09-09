@@ -528,7 +528,7 @@
     isFinalPhase, isMotoPhase, isNotTimedPhase, num, perfHasKnockout,
     expandIndex, loadIndexCached, loadFieldStrength,
     PERF_DNF_SCORES, perfClamp, perfScoreRang, perfBestTime, perfChronoScore,
-    perfConstance, perfCoefConstance, perfDeepestPhase, perfShrinkMean, applyFieldScore,
+    perfConstance, perfCoefConstance, perfDeepestPhase, perfShrinkMean, applyFieldScore, perfWeight,
     formatDataDates,
   } = window.SqorzCommon;
   const INDEX_SOURCES = [
@@ -1132,13 +1132,14 @@
     for (const m of matches) {
       const e = perfEngagement(m);
       let a = byYear.get(e.year);
-      if (!a) { a = { scores: 0, n: 0 }; byYear.set(e.year, a); }
+      if (!a) { a = { scores: 0, w: 0, n: 0 }; byYear.set(e.year, a); }
       a.scores += applyFieldScore(e.raw, 1, fieldKeyOfEvent(m), e.year, fieldCtxFor(m), e.nDnf);
+      a.w += perfWeight(m.totalParticipants, e.nDnf);
       a.n++;
     }
     const years = [...byYear.keys()].filter(y => y !== '????').sort((a, b) => b.localeCompare(a));
     if (!years.length) return null;
-    const means = years.map(y => { const a = byYear.get(y); return perfShrinkMean(a.scores / a.n, a.n); });
+    const means = years.map(y => { const a = byYear.get(y); return perfShrinkMean(a.scores / a.n, a.w); });
     return Math.round(means.reduce((s, v) => s + v, 0) / means.length);
   }
 
