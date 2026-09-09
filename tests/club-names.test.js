@@ -40,3 +40,7 @@ test('clubs.json : copie conforme au canonique club_stats', () => {
   const ref = fs.readFileSync(path.join(__dirname, '..', '..', 'club_stats', 'clubs.json'), 'utf8');
   assert.equal(local, ref, 'copie exacte (via tools/sync-clubs.sh)');
 });
+
+test('pied de page : Sqorz et JSTiming (données UEC utilisées ici)', () => {
+  assert.ok(src.includes('>Sqorz</a> et <a href="https://www.jstiming.nl"'), 'double attribution');
+});
