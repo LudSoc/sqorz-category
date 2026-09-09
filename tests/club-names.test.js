@@ -49,3 +49,7 @@ test('disclaimer UEC affiché pour les catégories uec: (socle en retard tolér�
   assert.ok(src.includes("currentCatCode.startsWith('uec:')"), 'conditionné aux catégories UEC');
   assert.ok(src.includes("typeof UEC_SOURCE_NOTE === 'string'"), 'garde CDN');
 });
+
+test('pied de page : Sqorz et JSTiming (données UEC utilisées ici)', () => {
+  assert.ok(src.includes('>Sqorz</a> et <a href="https://www.jstiming.nl"'), 'double attribution');
+});
