@@ -272,6 +272,20 @@
   tr.row-highlight td:nth-child(2){background:rgba(59,130,246,.08)}
   tr.row-current td:nth-child(2){background:rgba(59,130,246,.18); box-shadow:inset 3px 0 0 var(--accent)}
 
+  /* Perf explainer */
+  .perf-how{margin:0 0 12px; border:1px solid var(--line); border-radius:10px; background:var(--card); overflow:hidden}
+  .perf-how summary{cursor:pointer; padding:8px 12px; font-size:12px; color:var(--muted); list-style:none; user-select:none}
+  .perf-how summary::-webkit-details-marker{display:none}
+  .perf-how summary:hover{color:var(--ink)}
+  .perf-how[open] summary{border-bottom:1px solid var(--line); color:var(--ink)}
+  .perf-how-body{padding:4px 14px 12px; font-size:12px; color:var(--ink-2); line-height:1.55}
+  .perf-how-body p{margin:8px 0}
+  .perf-how-body ul, .perf-how-body ol{margin:4px 0 8px; padding-left:18px}
+  .perf-how-body li{margin:4px 0}
+  .perf-how-detail{margin-top:6px}
+  .perf-how-detail>summary{cursor:pointer; font-weight:600; font-size:12px; color:var(--muted)}
+  .perf-how-detail>summary:hover{color:var(--ink)}
+
   /* Year filter */
   .year-filter{display:flex; gap:5px}
   .yf-btn{
@@ -1247,6 +1261,31 @@
     </div>`;
   }
 
+  // Encadré « comment est calculé l'indice 🏅 » (même formule que sqorz_stats,
+  // sans coef de niveau : ici toutes les orgas valent 1).
+  function renderPerfHow() {
+    return `<details class="perf-how">
+      <summary>ℹ️ Comment est calculé l'indice 🏅 ?</summary>
+      <div class="perf-how-body">
+        <p>L'indice résume le niveau d'un pilote <strong>dans cette catégorie</strong> en un nombre de 0 à 1000 (même formule que Stats Pilote, sans bonus/malus de niveau : seule la catégorie compte). Repères : <strong>~500</strong> = milieu, <strong>800+</strong> = parmi les meilleurs.</p>
+        <p>Trois idées :</p>
+        <ol>
+          <li><strong>Les places, à contexte égal.</strong> Chaque course est notée selon le rang, ajusté par la taille du plateau (gagner à 30 vaut plus qu'à 8) et par sa force (battre des pilotes forts vaut plus). Un podium vaut nettement plus qu'une place en fond de top-20.</li>
+          <li><strong>La manière.</strong> Léger bonus pour la régularité en manches et les finales atteintes ; sur les épreuves chronométrées, le meilleur temps (comparé à la catégorie du jour) compte pour environ un quart du score.</li>
+          <li><strong>La prudence.</strong> Peu de courses = indice tiré vers 500 — d'autant plus si les plateaux étaient petits. Un abandon n'est pas un zéro : pénalisé selon la phase atteinte (manches ≈ 250 … finale ≈ 700).</li>
+        </ol>
+        <details class="perf-how-detail">
+          <summary>Détail du calcul</summary>
+          <ul>
+            <li><strong>Rang</strong> — 1ᵉʳ d'un gros champ ≈ 980-1000, médiane ≈ 500.</li>
+            <li><strong>Constance</strong> — facteur ×0,97 à ×1,05 (top 4 en manches + finale atteinte).</li>
+            <li><strong>Indice du pilote</strong> — moyenne de ses indices annuels dans la catégorie.</li>
+          </ul>
+        </details>
+      </div>
+    </details>`;
+  }
+
   // --- Render table ---
   // Pas de filtre parité pour l'UEC : les concurrents UEC n'ont pas d'âge renseigné
   // (le filtre ne les exclurait jamais — barre masquée sur les catégories `uec:…`).
@@ -1387,6 +1426,7 @@
         <label class="mobile-stat-sel-label">Stat affichée</label>
         <select id="mobileStatSel" class="control">${mobileStatOptions}</select>
       </div>
+      ${renderPerfHow()}
       <div class="card table-scroll-wrap" style="padding:0">
         <div class="table-scroll">
           <table class="ranking-table">
