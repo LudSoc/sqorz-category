@@ -543,7 +543,7 @@
     expandIndex, loadIndexCached, loadFieldStrength,
     PERF_DNF_SCORES, perfClamp, perfScoreRang, perfBestTime, perfChronoScore,
     perfConstance, perfCoefConstance, perfDeepestPhase, perfShrinkMean, applyFieldScore, perfWeight,
-    formatDataDates,
+    renderDataDates, setTextStatus, setBarProgress,
   } = window.SqorzCommon;
   // --- Noms complets des clubs (clubs.json, cf. club_stats/tools/clubs/README.md) ---
   // Normalisation compatible club_stats (conserve '-' et la ponctuation : JOUE-T ≠ JOUE T).
@@ -610,11 +610,7 @@
   const retryBtn = document.getElementById('retryBtn');
 
   function setProgress(done, total) {
-    const wrap = document.getElementById('progressWrap');
-    const bar  = document.getElementById('progressBar');
-    if (!total) { wrap.hidden = true; return; }
-    wrap.hidden = false;
-    bar.style.width = Math.min(99, Math.round(100 * done / total)) + '%';
+    setBarProgress(done, total);
   }
 
   // --- Cache client piloté par meta.json (sha256), via SqorzCommon.loadIndexCached ---
@@ -656,15 +652,10 @@
 
   // Fraîcheur par source dans le pied de page (une seule date si identiques).
   function showDataDates() {
-    const wrap = document.getElementById('dataDateWrap');
-    const el = document.getElementById('dataDate');
-    const text = formatDataDates([
+    renderDataDates([
       { tag: 'FR', iso: pilotsIndex && pilotsIndex.generated },
       { tag: 'UEC', iso: uecIndex && uecIndex.generated },
     ]);
-    if (!wrap || !el || !text) return;
-    el.textContent = text;
-    wrap.hidden = false;
   }
 
   async function loadIndex() {
@@ -848,8 +839,7 @@
 
   // --- Status ---
   function setStatus(msg, isError = false) {
-    statusEl.textContent = msg || '';
-    statusEl.classList.toggle('error', isError);
+    setTextStatus(statusEl, msg, isError);
   }
 
   // Nom « complet » d'une catégorie : la variante className la plus fréquente dans les données.
