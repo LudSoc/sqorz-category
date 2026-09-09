@@ -545,6 +545,28 @@
     perfConstance, perfCoefConstance, perfDeepestPhase, perfShrinkMean, applyFieldScore, perfWeight,
     formatDataDates,
   } = window.SqorzCommon;
+  // --- Noms complets des clubs (clubs.json, cf. club_stats/tools/clubs/README.md) ---
+  // Normalisation compatible club_stats (conserve '-' et la ponctuation : JOUE-T ≠ JOUE T).
+  const normClubCode = s => (s || '').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  let clubFullNames = new Map();
+  async function loadClubNames() {
+    try {
+      const r = await fetch('clubs.json', { cache: 'no-cache' });
+      if (!r.ok) return;
+      const j = await r.json();
+      const m = (j && j.mapping) || j || {};
+      for (const [k, v] of Object.entries(m)) {
+        if (k === '_meta' || !v || !v.name) continue;
+        clubFullNames.set(normClubCode(k), v.name);
+      }
+    } catch { /* repli : codes seuls */ }
+  }
+  // « BMX BESANCON (BESANC) » — repli sur le code seul si inconnu.
+  function clubDisplayName(raw) {
+    const code = (raw || '').trim();
+    const full = clubFullNames.get(normClubCode(code));
+    return full ? `${full} (${code})` : code;
+  }
   const INDEX_SOURCES = [
     'https://pub-7af06f138c97425f8062b881846803cb.r2.dev/pilots-index.json',
     'https://github.com/LudSoc/sqorz-stats/releases/latest/download/pilots-index.json',
@@ -654,6 +676,7 @@
     try {
       // Index FR : requis — l'UI devient utilisable dès qu'il est prêt.
       pilotsIndex = await loadIndexCached(pilotsCfg());
+      await loadClubNames();
       finishPrimaryLoad();
       // UEC : arrière-plan — la liste gagne les entrées `uec:…` à son arrivée.
       loadUecInBackground();
@@ -1642,7 +1665,7 @@
     const sorted0 = [...row.matches].sort((a, b) =>
       (b.event.eventDate || '').localeCompare(a.event.eventDate || ''));
     const club = sorted0[0]?.competitor?.groupName || '';
-    const clubStr = club ? ` · ${club}` : '';
+    const clubStr = club ? ` · ${clubDisplayName(club)}` : '';
     modalSub.textContent = `${row.stats.entries} engagement(s)${yearLabel}${clubStr}`;
 
     const sorted = sorted0;
